@@ -69,6 +69,9 @@ st.caption(
 # Dashboard 1 (como no rascunho): distribuição (histograma) à esquerda, correlação (heatmap) à direita
 col_distribuicao, col_correlacao = st.columns([1.5, 1])
 
+# Dias usados na correlação: muda quando o usuário arrasta uma faixa no histograma
+df_corr = df_filtrado
+
 with col_distribuicao:
     st.subheader("Distribuição")
 
@@ -81,6 +84,8 @@ with col_distribuicao:
         if dados_hist.empty:
             st.warning(f"Nenhum paciente-dia com {var_hist} dentro dos intervalos escolhidos.")
         else:
+            faixa = alt.selection_interval(name="faixa", encodings=["x"])
+
             histograma = (
                 alt.Chart(dados_hist)
                 .mark_bar(color=AMARELO)
@@ -89,6 +94,7 @@ with col_distribuicao:
                     y=alt.Y("count()", title="Paciente-dias"),
                     tooltip=[alt.Tooltip("count()", title="Paciente-dias")],
                 )
+                .add_params(faixa)
                 .properties(height=380)
             )
             if separar_por_classe:
@@ -97,7 +103,14 @@ with col_distribuicao:
                     tooltip=["classe", alt.Tooltip("count()", title="Paciente-dias")],
                 )
 
-            st.altair_chart(histograma, width="stretch")
+            evento = st.altair_chart(
+                histograma, width="stretch", on_select="rerun", key=f"hist_{var_hist}_{separar_por_classe}"
+            )
+            st.caption("Arraste uma faixa no histograma para recalcular a correlação só com esses dias.")
+
+            # A seleção volta como {campo: [início, fim]}; com bin, o campo pode vir com prefixo do bin
+            for inicio, fim in evento.selection.get("faixa", {}).values():
+                df_corr = df_filtrado[df_filtrado[var_hist].between(inicio, fim)]
 
 with col_correlacao:
     st.subheader("Correlação (Spearman)")
@@ -108,8 +121,10 @@ with col_correlacao:
         # Matriz de correlação em formato longo (uma linha por par de variáveis).
         # Cada par usa só os dias em que as duas foram medidas; com menos de MIN_DIAS dias o par fica vazio.
         MIN_DIAS = 10
+        if len(df_corr) < len(df_filtrado):
+            st.caption(f"Faixa selecionada no histograma: {len(df_corr)} paciente-dias.")
         corr = (
-            df_filtrado[variaveis]
+            df_corr[variaveis]
             .corr(method="spearman", min_periods=MIN_DIAS)
             .rename_axis(index="var_y", columns="var_x")
             .stack(future_stack=True)
