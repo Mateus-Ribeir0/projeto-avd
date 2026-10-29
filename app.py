@@ -161,8 +161,13 @@ with aba_correlacao:
                     st.caption(f"Células vazias: pares com menos de {MIN_DIAS} dias medidos em comum.")
 
                 base = alt.Chart(corr[~sem_dados]).encode(
-                    x=alt.X("var_x:N", title=None, sort=variaveis, axis=alt.Axis(labelAngle=-45)),
-                    y=alt.Y("var_y:N", title=None, sort=variaveis),
+                    x=alt.X(
+                        "var_x:N",
+                        title=None,
+                        sort=variaveis,
+                        axis=alt.Axis(labelAngle=-45, labelOverlap=False, labelLimit=160),
+                    ),
+                    y=alt.Y("var_y:N", title=None, sort=variaveis, axis=alt.Axis(labelLimit=160)),
                 )
                 heatmap = base.mark_rect().encode(
                     color=alt.Color(
