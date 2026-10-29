@@ -44,3 +44,39 @@ def montar_paciente_dia(df):
     largo.loc[media_dia > 180, "classe"] = "Hiperglicemia"
 
     return largo.reset_index()
+
+
+# Dashboard 2: faixas de glicemia (mg/dL) e nome de cada momento da medição
+LIMITE_HIPO = 70
+LIMITE_HIPER = 180
+MOMENTOS = {
+    "glicemia_pre_cafe": "Pré-café",
+    "glicemia_pos_cafe": "Pós-café",
+    "glicemia_pre_almoco": "Pré-almoço",
+    "glicemia_pos_almoco": "Pós-almoço",
+    "glicemia_pre_lanche": "Pré-lanche",
+    "glicemia_pre_jantar": "Pré-jantar",
+    "glicemia_pos_jantar": "Pós-jantar",
+    "glicemia_nao_especificada": "Não especificado",
+}
+
+
+@st.cache_data
+def montar_glicemias(df):
+    """Uma linha por medição de glicemia, com o momento do dia, a semana e a faixa (hipo / alvo / hiper)."""
+    glic = df[df["eh_glicemia"] & (df["valor"] > 0)].dropna(subset=["datahora"]).copy()
+    glic["momento"] = glic["evento"].map(MOMENTOS)
+    glic["data"] = glic["datahora"].dt.date
+    glic["semana"] = glic["datahora"].dt.to_period("W").dt.start_time
+    glic["faixa"] = "Na faixa-alvo"
+    glic.loc[glic["valor"] < LIMITE_HIPO, "faixa"] = "Hipoglicemia"
+    glic.loc[glic["valor"] > LIMITE_HIPER, "faixa"] = "Hiperglicemia"
+    return glic[["paciente", "datahora", "data", "semana", "momento", "valor", "faixa"]]
+
+
+@st.cache_data
+def montar_insulina_dia(df):
+    """Total de insulina (regular + NPH + ultralenta) aplicado por paciente-dia."""
+    ins = df[df["codigo"].isin(COD_INSULINA)].dropna(subset=["datahora"]).copy()
+    ins["data"] = ins["datahora"].dt.date
+    return ins.groupby(["paciente", "data"], as_index=False)["valor"].sum()

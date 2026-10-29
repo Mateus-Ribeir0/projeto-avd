@@ -1,7 +1,17 @@
 import altair as alt
 import streamlit as st
 
-from src.data_loader import COLS_GLICEMIA, COLS_INSULINA, load_data, montar_paciente_dia
+from src.data_loader import (
+    COLS_GLICEMIA,
+    COLS_INSULINA,
+    LIMITE_HIPER,
+    LIMITE_HIPO,
+    MOMENTOS,
+    load_data,
+    montar_glicemias,
+    montar_insulina_dia,
+    montar_paciente_dia,
+)
 
 st.set_page_config(
     page_title="Diabetes Dataset — Dashboards",
@@ -12,6 +22,8 @@ st.title("Diabetes Dataset — Dashboards")
 
 eventos = load_data()
 df = montar_paciente_dia(eventos)
+glicemias = montar_glicemias(eventos)
+insulina_dia = montar_insulina_dia(eventos)
 
 # Variáveis quantitativas do estudo (mesma lista COLS_CORR do notebook de EDA)
 VARS_QUANT = [c for c in COLS_GLICEMIA + COLS_INSULINA if df[c].notna().any()]
@@ -165,5 +177,99 @@ with aba_correlacao:
                 st.altair_chart((heatmap + valores).properties(height=380), width="stretch")
 
 with aba_acompanhamento:
-    # TODO: Dashboard 2 — widgets, KPIs (st.metric) e gráficos Altair, conforme entregas/rascunho-dashboard2.png
-    st.info("Em construção.")
+    st.subheader("Acompanhamento Glicêmico")
+
+    # Widgets do Dashboard 2 (rascunho: paciente, período e momento da medição, lado a lado)
+    col_paciente, col_periodo, col_momento = st.columns(3)
+
+    with col_paciente:
+        paciente = st.selectbox(
+            "Paciente",
+            options=["Todos"] + sorted(glicemias["paciente"].unique().tolist()),
+            format_func=lambda p: "Todos os pacientes" if p == "Todos" else f"Paciente {p}",
+        )
+
+    glic_paciente = glicemias if paciente == "Todos" else glicemias[glicemias["paciente"] == paciente]
+    ins_paciente = insulina_dia if paciente == "Todos" else insulina_dia[insulina_dia["paciente"] == paciente]
+
+    with col_periodo:
+        # O período disponível muda com o paciente escolhido
+        primeiro_dia, ultimo_dia = glic_paciente["data"].min(), glic_paciente["data"].max()
+        periodo = st.slider(
+            "Período",
+            min_value=primeiro_dia,
+            max_value=ultimo_dia,
+            value=(primeiro_dia, ultimo_dia),
+            format="DD/MM/YYYY",
+            key=f"periodo_{paciente}",
+        )
+
+    with col_momento:
+        momentos_existentes = [m for m in MOMENTOS.values() if m in set(glic_paciente["momento"])]
+        momentos = st.multiselect(
+            "Momento da medição",
+            options=momentos_existentes,
+            default=momentos_existentes,
+            key=f"momentos_{paciente}",
+        )
+
+    glic_filtrada = glic_paciente[
+        glic_paciente["data"].between(*periodo) & glic_paciente["momento"].isin(momentos)
+    ]
+    ins_filtrada = ins_paciente[ins_paciente["data"].between(*periodo)]
+
+    # KPIs: o delta compara o recorte com a amostra completa (todos os pacientes, todo o período)
+    def resumo(glic, ins):
+        return {
+            "mediana": glic["valor"].median(),
+            "alvo": (glic["faixa"] == "Na faixa-alvo").mean() * 100,
+            "hiper": (glic["faixa"] == "Hiperglicemia").mean() * 100,
+            "hipo": (glic["faixa"] == "Hipoglicemia").mean() * 100,
+            "insulina": ins["valor"].mean(),
+        }
+
+    geral = resumo(glicemias, insulina_dia)
+
+    def mostrar_kpis(glic, ins):
+        if glic.empty:
+            st.warning("Nenhuma medição de glicemia com os filtros escolhidos.")
+            return
+
+        atual = resumo(glic, ins)
+        tem_recorte = len(glic) < len(glicemias)
+
+        def delta(chave, unidade):
+            # Sem nenhum filtro o recorte é a própria amostra, então não há o que comparar
+            if not tem_recorte:
+                return None
+            return f"{atual[chave] - geral[chave]:+.1f} {unidade} vs. amostra"
+
+        k1, k2, k3, k4, k5 = st.columns(5)
+        k1.metric(
+            "Glicemia mediana", f"{atual['mediana']:.0f} mg/dL", delta("mediana", "mg/dL"),
+            delta_color="inverse", border=True,
+        )
+        k2.metric(
+            f"Na faixa-alvo ({LIMITE_HIPO}–{LIMITE_HIPER})", f"{atual['alvo']:.0f}%", delta("alvo", "p.p."),
+            border=True,
+        )
+        k3.metric(
+            f"Hiperglicemia (> {LIMITE_HIPER})", f"{atual['hiper']:.0f}%", delta("hiper", "p.p."),
+            delta_color="inverse", border=True,
+        )
+        k4.metric(
+            f"Hipoglicemia (< {LIMITE_HIPO})", f"{atual['hipo']:.0f}%", delta("hipo", "p.p."),
+            delta_color="inverse", border=True,
+        )
+        if ins.empty:
+            k5.metric("Insulina por dia", "–", border=True)
+        else:
+            k5.metric(
+                "Insulina por dia", f"{atual['insulina']:.0f} U", delta("insulina", "U"),
+                delta_color="off", border=True,
+            )
+        st.caption(f"{len(glic)} medições de glicemia de {glic['paciente'].nunique()} paciente(s).")
+
+    mostrar_kpis(glic_filtrada, ins_filtrada)
+
+    # TODO: gráficos Altair (glicemia por semana e faixas por momento do dia) ligados aos KPIs
