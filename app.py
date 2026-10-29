@@ -72,25 +72,32 @@ col_distribuicao, col_correlacao = st.columns([1.5, 1])
 with col_distribuicao:
     st.subheader("Distribuição")
 
-    var_hist = st.selectbox("Variável do histograma", options=variaveis)
+    if not variaveis:
+        st.warning("Selecione pelo menos 1 variável para ver a distribuição.")
+    else:
+        var_hist = st.selectbox("Variável do histograma", options=variaveis)
+        dados_hist = df_filtrado[[var_hist, "classe"]].dropna()
 
-    histograma = (
-        alt.Chart(df_filtrado[[var_hist, "classe"]].dropna())
-        .mark_bar(color=AMARELO)
-        .encode(
-            x=alt.X(f"{var_hist}:Q", bin=alt.Bin(maxbins=30), title=var_hist),
-            y=alt.Y("count()", title="Paciente-dias"),
-            tooltip=[alt.Tooltip("count()", title="Paciente-dias")],
-        )
-        .properties(height=380)
-    )
-    if separar_por_classe:
-        histograma = histograma.encode(
-            color=alt.Color("classe:N", title="Classe", scale=CORES_CLASSE),
-            tooltip=["classe", alt.Tooltip("count()", title="Paciente-dias")],
-        )
+        if dados_hist.empty:
+            st.warning(f"Nenhum paciente-dia com {var_hist} dentro dos intervalos escolhidos.")
+        else:
+            histograma = (
+                alt.Chart(dados_hist)
+                .mark_bar(color=AMARELO)
+                .encode(
+                    x=alt.X(f"{var_hist}:Q", bin=alt.Bin(maxbins=30), title=var_hist),
+                    y=alt.Y("count()", title="Paciente-dias"),
+                    tooltip=[alt.Tooltip("count()", title="Paciente-dias")],
+                )
+                .properties(height=380)
+            )
+            if separar_por_classe:
+                histograma = histograma.encode(
+                    color=alt.Color("classe:N", title="Classe", scale=CORES_CLASSE),
+                    tooltip=["classe", alt.Tooltip("count()", title="Paciente-dias")],
+                )
 
-    st.altair_chart(histograma, width="stretch")
+            st.altair_chart(histograma, width="stretch")
 
 with col_correlacao:
     st.subheader("Correlação (Spearman)")
@@ -98,33 +105,42 @@ with col_correlacao:
     if len(variaveis) < 2:
         st.warning("Selecione pelo menos 2 variáveis para calcular a correlação.")
     else:
-        # Matriz de correlação em formato longo (uma linha por par de variáveis)
+        # Matriz de correlação em formato longo (uma linha por par de variáveis).
+        # Cada par usa só os dias em que as duas foram medidas; com menos de MIN_DIAS dias o par fica vazio.
+        MIN_DIAS = 10
         corr = (
             df_filtrado[variaveis]
-            .corr(method="spearman")
+            .corr(method="spearman", min_periods=MIN_DIAS)
             .rename_axis(index="var_y", columns="var_x")
-            .stack()
+            .stack(future_stack=True)
             .rename("correlacao")
             .reset_index()
         )
+        sem_dados = corr["correlacao"].isna()
 
-        base = alt.Chart(corr).encode(
-            x=alt.X("var_x:N", title=None, sort=variaveis, axis=alt.Axis(labelAngle=-45)),
-            y=alt.Y("var_y:N", title=None, sort=variaveis),
-        )
-        heatmap = base.mark_rect().encode(
-            color=alt.Color(
-                "correlacao:Q",
-                title="Spearman",
-                scale=alt.Scale(domain=[-1, 0, 1], range=["#6c8ebf", "#262626", AMARELO]),
-            ),
-            tooltip=["var_x", "var_y", alt.Tooltip("correlacao:Q", format=".2f")],
-        )
-        valores = base.mark_text().encode(
-            text=alt.Text("correlacao:Q", format=".2f"),
-            color=alt.condition("datum.correlacao > 0.5", alt.value("black"), alt.value("white")),
-        )
+        if sem_dados.all():
+            st.warning("Poucos paciente-dias nos intervalos escolhidos para calcular a correlação.")
+        else:
+            if sem_dados.any():
+                st.caption(f"Células vazias: pares com menos de {MIN_DIAS} dias medidos em comum.")
 
-        st.altair_chart((heatmap + valores).properties(height=380), width="stretch")
+            base = alt.Chart(corr[~sem_dados]).encode(
+                x=alt.X("var_x:N", title=None, sort=variaveis, axis=alt.Axis(labelAngle=-45)),
+                y=alt.Y("var_y:N", title=None, sort=variaveis),
+            )
+            heatmap = base.mark_rect().encode(
+                color=alt.Color(
+                    "correlacao:Q",
+                    title="Spearman",
+                    scale=alt.Scale(domain=[-1, 0, 1], range=["#6c8ebf", "#262626", AMARELO]),
+                ),
+                tooltip=["var_x", "var_y", alt.Tooltip("correlacao:Q", format=".2f")],
+            )
+            valores = base.mark_text().encode(
+                text=alt.Text("correlacao:Q", format=".2f"),
+                color=alt.condition("datum.correlacao > 0.5", alt.value("black"), alt.value("white")),
+            )
+
+            st.altair_chart((heatmap + valores).properties(height=380), width="stretch")
 
 # TODO: Dashboard 2 — KPIs (Aula 22)
