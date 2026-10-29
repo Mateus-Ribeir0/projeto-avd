@@ -1,4 +1,5 @@
 import pandas as pd
+import streamlit as st
 
 # Variáveis do formato paciente-dia (mesma lista COLS_CORR do notebook de EDA)
 COLS_GLICEMIA = [
@@ -8,7 +9,7 @@ COLS_INSULINA = ["insulina_regular", "insulina_nph"]
 COD_INSULINA = [33, 34, 35]
 
 
-# TODO: adicionar @st.cache_data (import streamlit as st) para evitar reler o CSV a cada interação
+@st.cache_data
 def load_data(path="data/clean/dataset.csv"):
     """Lê o dataset já tratado (exportado ao final do notebook de EDA), um evento por linha."""
     df = pd.read_csv(path)
@@ -16,6 +17,7 @@ def load_data(path="data/clean/dataset.csv"):
     return df
 
 
+@st.cache_data
 def montar_paciente_dia(df):
     """Reorganiza os eventos no formato largo: uma linha por paciente-dia, como no notebook.
 
