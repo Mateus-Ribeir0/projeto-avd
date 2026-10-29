@@ -215,37 +215,38 @@ with aba_correlacao:
 with aba_acompanhamento:
     st.subheader("Acompanhamento Glicêmico")
 
-    col_paciente, col_periodo, col_momento = st.columns(3)
+    with st.container(border=True):
+        col_paciente, col_periodo, col_momento = st.columns(3)
 
-    with col_paciente:
-        paciente = st.selectbox(
-            "Paciente",
-            options=["Todos"] + sorted(glicemias["paciente"].unique().tolist()),
-            format_func=lambda p: "Todos os pacientes" if p == "Todos" else f"Paciente {p}",
-        )
+        with col_paciente:
+            paciente = st.selectbox(
+                "Paciente",
+                options=["Todos"] + sorted(glicemias["paciente"].unique().tolist()),
+                format_func=lambda p: "Todos os pacientes" if p == "Todos" else f"Paciente {p}",
+            )
 
-    glic_paciente = glicemias if paciente == "Todos" else glicemias[glicemias["paciente"] == paciente]
-    ins_paciente = insulina_dia if paciente == "Todos" else insulina_dia[insulina_dia["paciente"] == paciente]
+        glic_paciente = glicemias if paciente == "Todos" else glicemias[glicemias["paciente"] == paciente]
+        ins_paciente = insulina_dia if paciente == "Todos" else insulina_dia[insulina_dia["paciente"] == paciente]
 
-    with col_periodo:
-        primeiro_dia, ultimo_dia = glic_paciente["data"].min(), glic_paciente["data"].max()
-        periodo = st.slider(
-            "Período",
-            min_value=primeiro_dia,
-            max_value=ultimo_dia,
-            value=(primeiro_dia, ultimo_dia),
-            format="DD/MM/YYYY",
-            key=f"periodo_{paciente}",
-        )
+        with col_periodo:
+            primeiro_dia, ultimo_dia = glic_paciente["data"].min(), glic_paciente["data"].max()
+            periodo = st.slider(
+                "Período",
+                min_value=primeiro_dia,
+                max_value=ultimo_dia,
+                value=(primeiro_dia, ultimo_dia),
+                format="DD/MM/YYYY",
+                key=f"periodo_{paciente}",
+            )
 
-    with col_momento:
-        momentos_existentes = [m for m in MOMENTOS.values() if m in set(glic_paciente["momento"])]
-        momentos = st.multiselect(
-            "Momento da medição",
-            options=momentos_existentes,
-            default=momentos_existentes,
-            key=f"momentos_{paciente}",
-        )
+        with col_momento:
+            momentos_existentes = [m for m in MOMENTOS.values() if m in set(glic_paciente["momento"])]
+            momentos = st.multiselect(
+                "Momento da medição",
+                options=momentos_existentes,
+                default=momentos_existentes,
+                key=f"momentos_{paciente}",
+            )
 
     glic_filtrada = glic_paciente[
         glic_paciente["data"].between(*periodo) & glic_paciente["momento"].isin(momentos)
@@ -304,17 +305,17 @@ with aba_acompanhamento:
                 "Insulina por dia", f"{atual['insulina']:.0f} U", delta("insulina", "U"),
                 delta_color="off", border=True,
             )
-        st.caption(f"{len(glic)} medições de glicemia de {glic['paciente'].nunique()} paciente(s).")
+        st.caption(f"{len(glic)} medições de {glic['paciente'].nunique()} paciente(s).")
 
     area_kpis = st.container()
 
     glic_selecionada, ins_selecionada = glic_filtrada, ins_filtrada
 
     if not glic_filtrada.empty:
-        col_semana, col_faixas = st.columns([1.5, 1])
+        col_semana, col_faixas = st.columns([3, 2])
 
-        with col_semana:
-            st.markdown("**Glicemia mediana por semana**")
+        with col_semana.container(border=True):
+            titulo_cartao("Glicemia mediana por semana")
 
             por_semana = glic_filtrada.groupby("semana", as_index=False).agg(
                 mediana=("valor", "median"), medicoes=("valor", "size")
@@ -330,8 +331,8 @@ with aba_acompanhamento:
                 alt.Chart(por_semana)
                 .mark_line(color=AMARELO, point=alt.OverlayMarkDef(color=AMARELO))
                 .encode(
-                    x=alt.X("semana:T", title="Semana", axis=alt.Axis(format="%m/%Y")),
-                    y=alt.Y("mediana:Q", title="Glicemia mediana (mg/dL)"),
+                    x=alt.X("semana:T", title=None, axis=alt.Axis(format="%m/%Y")),
+                    y=alt.Y("mediana:Q", title="mg/dL"),
                     tooltip=[
                         alt.Tooltip("semana:T", title="Semana de", format="%d/%m/%Y"),
                         alt.Tooltip("mediana:Q", title="Mediana (mg/dL)", format=".0f"),
@@ -342,15 +343,12 @@ with aba_acompanhamento:
             )
 
             evento_semana = st.altair_chart(
-                (faixa_alvo + linha).properties(height=320),
+                (faixa_alvo + linha).properties(height=300),
                 width="stretch",
                 on_select="rerun",
                 key=f"semanas_{paciente}",
             )
-            st.caption(
-                f"Faixa clara: alvo de {LIMITE_HIPO} a {LIMITE_HIPER} mg/dL. "
-                "Arraste no gráfico para ver só um trecho do período."
-            )
+            st.caption("Faixa clara = alvo. Arraste para filtrar um trecho.")
 
             for inicio, fim in evento_semana.selection.get("periodo", {}).values():
                 inicio, fim = para_data(inicio).normalize(), para_data(fim)
@@ -358,8 +356,8 @@ with aba_acompanhamento:
                 dias_insulina = pd.to_datetime(ins_filtrada["data"])
                 ins_selecionada = ins_filtrada[dias_insulina.between(inicio, fim + pd.Timedelta(days=6))]
 
-        with col_faixas:
-            st.markdown("**Faixas por momento do dia**")
+        with col_faixas.container(border=True):
+            titulo_cartao("Faixas por momento do dia")
 
             por_momento = (
                 glic_selecionada.groupby(["momento", "faixa"], as_index=False)
@@ -374,47 +372,51 @@ with aba_acompanhamento:
                 .mark_bar()
                 .encode(
                     y=alt.Y("momento:N", title=None, sort=list(MOMENTOS.values())),
-                    x=alt.X("medicoes:Q", stack="normalize", title="Medições", axis=alt.Axis(format="%")),
-                    color=alt.Color("faixa:N", title="Faixa", scale=CORES_FAIXA, sort=ORDEM_FAIXA),
+                    x=alt.X("medicoes:Q", stack="normalize", title=None, axis=alt.Axis(format="%")),
+                    color=alt.Color(
+                        "faixa:N",
+                        title=None,
+                        scale=CORES_FAIXA,
+                        sort=ORDEM_FAIXA,
+                        legend=alt.Legend(orient="top"),
+                    ),
                     order=alt.Order("ordem:Q"),
                     opacity=alt.condition(clique, alt.value(1), alt.value(0.35)),
                     tooltip=["momento", "faixa", alt.Tooltip("medicoes:Q", title="Medições")],
                 )
                 .add_params(clique)
-                .properties(height=320)
+                .properties(height=300)
             )
 
             evento_momento = st.altair_chart(
                 barras, width="stretch", on_select="rerun", key=f"momentos_grafico_{paciente}"
             )
-            st.caption("Clique num momento do dia para ver os KPIs só dele (shift + clique para vários).")
+            st.caption("Clique em um momento para filtrar (shift + clique para vários).")
 
             clicados = [item["momento"] for item in evento_momento.selection.get("momento", [])]
             if clicados:
                 glic_selecionada = glic_selecionada[glic_selecionada["momento"].isin(clicados)]
 
-        st.markdown("**Distribuição das medições de glicemia**")
-        distribuicao = (
-            alt.Chart(glic_selecionada[["valor", "faixa"]])
-            .mark_bar()
-            .encode(
-                x=alt.X("valor:Q", bin=alt.Bin(step=10), title="Glicemia (mg/dL)"),
-                y=alt.Y("count()", title="Medições"),
-                color=alt.Color("faixa:N", title="Faixa", scale=CORES_FAIXA, sort=ORDEM_FAIXA),
-                tooltip=["faixa", alt.Tooltip("count()", title="Medições")],
+        with st.container(border=True):
+            titulo_cartao("Distribuição das medições de glicemia")
+
+            distribuicao = (
+                alt.Chart(glic_selecionada[["valor", "faixa"]])
+                .mark_bar()
+                .encode(
+                    x=alt.X("valor:Q", bin=alt.Bin(step=10), title="Glicemia (mg/dL)"),
+                    y=alt.Y("count()", title="Medições"),
+                    color=alt.Color("faixa:N", scale=CORES_FAIXA, sort=ORDEM_FAIXA, legend=None),
+                    tooltip=["faixa", alt.Tooltip("count()", title="Medições")],
+                )
+                .properties(height=220)
             )
-            .properties(height=240)
-        )
-        regras = (
-            alt.Chart(pd.DataFrame({"limite": [LIMITE_HIPO, LIMITE_HIPER]}))
-            .mark_rule(color="white", strokeDash=[4, 4])
-            .encode(x="limite:Q")
-        )
-        st.altair_chart(distribuicao + regras, width="stretch")
-        st.caption(
-            f"Linhas tracejadas: limites de {LIMITE_HIPO} e {LIMITE_HIPER} mg/dL. "
-            "Mostra as medições que entram nos KPIs acima."
-        )
+            regras = (
+                alt.Chart(pd.DataFrame({"limite": [LIMITE_HIPO, LIMITE_HIPER]}))
+                .mark_rule(color="white", strokeDash=[4, 4])
+                .encode(x="limite:Q")
+            )
+            st.altair_chart(distribuicao + regras, width="stretch")
 
     with area_kpis:
         mostrar_kpis(glic_selecionada, ins_selecionada)
