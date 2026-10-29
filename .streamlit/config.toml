@@ -1,12 +1,9 @@
-# Configuração do Streamlit.
-# Identidade visual: fundo preto, destaque em amarelo (mesmo amarelo dos gráficos do app.py).
-
 [theme]
 base = "dark"
-paddingTop = "0.0rem"               # espaço abaixo da barra do topo (valor entre aspas)
-font = "sans serif"                 # "sans serif", "serif" ou "monospace"
-primaryColor = "#f5c518"            # cor de destaque (widgets, links, abas)
-backgroundColor = "#0d0d0d"         # fundo da página
-secondaryBackgroundColor = "#1a1a1a"  # fundo da sidebar, dos widgets e das métricas
-textColor = "#f2f2f2"               # cor do texto
+paddingTop = "0.0rem"
+font = "sans serif"
+primaryColor = "#f5c518"
+backgroundColor = "#0d0d0d"
+secondaryBackgroundColor = "#1a1a1a"
+textColor = "#f2f2f2"
 borderColor = "#333333"
