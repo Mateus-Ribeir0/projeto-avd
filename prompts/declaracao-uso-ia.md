@@ -46,10 +46,28 @@ Mesma ferramenta (Claude Code), numa conversa só, seguindo os passos do `ROTEIR
 4. Montar a identidade visual em preto e amarelo no `.streamlit/config.toml`.
 5. Estruturar o Dashboard 2 na ordem do roteiro (variáveis → métricas → widgets → rascunho), separar os dashboards em abas e implementar widgets, `st.metric` e gráficos Altair com seleção ligada aos KPIs.
 6. Organizar o código e os commits por etapa.
-7. Conferir o app contra os visuais mínimos da atividade: isso levou a um histograma por variável no Dashboard 1 (antes era um só, com seletor) e a um terceiro visual no Dashboard 2 (distribuição das medições por faixa).
+7. Verificar se o app cumpre os requisitos da atividade (ver seção abaixo).
+8. Reorganizar o layout dos dois dashboards em cartões, atualizar os rascunhos, remover comentários do código e deixar a justificativa das métricas mais direta.
 
 ## Aula 22 — O que foi aceito, modificado ou rejeitado e por quê
 
 - **Aceito:** gráficos em Altair nos dois dashboards; mediana (e não média) como medida central da glicemia, por causa da assimetria vista no EDA; KPIs em proporção de medições por faixa (hipo < 70, alvo 70–180, hiper > 180), com o mesmo limite de 180 mg/dL usado na classe do Dashboard 1; seleção por arraste (período) e por clique (momento do dia) atualizando os KPIs via `on_select`.
-- **Modificado:** a correlação passou a exigir pelo menos 10 dias em comum por par (`min_periods`), porque cada paciente-dia tem só parte das medições e alguns pares ficavam com valores sem sentido; os KPIs ficam acima dos gráficos, como no rascunho, usando um `st.container` preenchido depois da seleção; rótulos do heatmap e formato das datas ajustados depois de ver o app rodando.
+- **Modificado:** o layout passou a ser em cartões (resumo no topo, correlação e pares mais correlacionados lado a lado, histogramas em grade no Dashboard 1; filtros, KPIs e gráficos agrupados no Dashboard 2), e os rascunhos foram refeitos para acompanhar; a correlação passou a exigir pelo menos 10 dias em comum por par (`min_periods`), porque cada paciente-dia tem só parte das medições e alguns pares ficavam com valores sem sentido; os KPIs ficam acima dos gráficos, como no rascunho, usando um `st.container` preenchido depois da seleção; rótulos do heatmap e formato das datas ajustados depois de ver o app rodando.
 - **Rejeitado:** usar `st.stop()` quando não há dados para a correlação, porque interromperia também o Dashboard 2 na outra aba; trocado por avisos em cada gráfico.
+
+## Verificação dos requisitos do projeto
+
+Pedi à IA para conferir o app contra a lista de requisitos da atividade e testar cada item rodando o app (testes automáticos com `streamlit.testing` e no navegador). Resultado:
+
+| Requisito | Situação |
+|---|---|
+| Sidebar: 1 seletor de variáveis | Cumprido (multiselect de variáveis quantitativas) |
+| Sidebar: 1 filtro de intervalo (slider) | Cumprido (um slider por variável) |
+| Dashboard 1: mapa de calor de correlação | Cumprido (Spearman) |
+| Dashboard 1: um histograma por variável avaliada | Corrigido: antes havia um histograma com seletor; agora há um por variável selecionada |
+| Dashboard 2: 3 a 5 métricas | Cumprido (5 métricas) |
+| Dashboard 2: 3 visuais além das métricas | Corrigido: antes eram 2; foi adicionada a distribuição das medições por faixa |
+| Dois dashboards em abas | Cumprido (`st.tabs`) |
+| Widgets respondem / casos de borda (0, 1, 2+ variáveis, filtros sem dados) | Testado, sem erros |
+| Sem dados sensíveis | Conferido: pacientes só como número, dataset público, sem chaves no repositório |
+| Deploy e link no README | Pendente (Aula 23) |
