@@ -12,7 +12,7 @@ Claude Code (Anthropic), com as skills do Streamlit instaladas via `streamlit sk
 1. **Rascunho → esqueleto do `app.py`**: template de [layout-skeleton-prompt.md](layout-skeleton-prompt.md), com a imagem do rascunho anexada ([../entregas/rascunho-dashboard1.png](../entregas/rascunho-dashboard1.png)):
 
 ```text
-Contexto: sou aluno da disciplina Análise e Visualização de Dados (Cesar School). Estou criando um dashboard
+Contexto: sou aluno da disciplina Análise e Visualização de Dados. Estou criando um dashboard
 em Streamlit para avaliar a correlação entre as variáveis quantitativas do Diabetes Dataset (UCI),
 agregado por paciente-dia.
 
@@ -32,6 +32,6 @@ nas partes dos gráficos.
 
 ## O que foi aceito, modificado ou rejeitado e por quê
 
-- **Aceito:** a estrutura do layout (sidebar com filtros + duas colunas para correlação e distribuição), o seletor de variáveis (`st.multiselect`), um slider de intervalo por variável e o toggle de classe.
-- **Modificado:** o esqueleto foi adaptado do Heart Disease Dataset (exemplo do professor) para o Diabetes Dataset: a lista de variáveis passou a vir do `data_loader` e o filtro de intervalo passou a manter os dias com medição ausente, já que cada paciente-dia tem só parte das medições.
+- **Aceito:** a estrutura do layout (sidebar com filtros + duas colunas para correlação e distribuição), o seletor de variáveis, um slider de intervalo por variável e o toggle de classe.
+- **Modificado:** o esqueleto foi adaptado do Heart Disease Dataset para o Diabetes Dataset: a lista de variáveis passou a vir do `data_loader` e o filtro de intervalo passou a manter os dias com medição ausente, já que cada paciente-dia tem só parte das medições.
 - **Rejeitado:** implementar os gráficos (heatmap e histogramas) nesta etapa, porque a atividade pede só o esqueleto com os widgets; eles ficaram como `# TODO`.
