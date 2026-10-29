@@ -26,10 +26,8 @@ df = montar_paciente_dia(eventos)
 glicemias = montar_glicemias(eventos)
 insulina_dia = montar_insulina_dia(eventos)
 
-# Variáveis quantitativas do estudo (mesma lista COLS_CORR do notebook de EDA)
 VARS_QUANT = [c for c in COLS_GLICEMIA + COLS_INSULINA if df[c].notna().any()]
 
-# Paleta do app: amarelo de destaque sobre fundo escuro (mesmas cores do config.toml)
 AMARELO = "#f5c518"
 CINZA = "#8a8a8a"
 CINZA_ESCURO = "#4d4d4d"
@@ -40,7 +38,6 @@ CORES_CLASSE = alt.Scale(
 ORDEM_FAIXA = ["Hipoglicemia", "Na faixa-alvo", "Hiperglicemia"]
 CORES_FAIXA = alt.Scale(domain=ORDEM_FAIXA, range=["#6c8ebf", AMARELO, "#e8590c"])
 
-# Sidebar: filtros do Dashboard 1 (variáveis + intervalo)
 with st.sidebar:
     st.header("Filtros do Dashboard 1")
 
@@ -57,7 +54,6 @@ with st.sidebar:
         help="Colore a distribuição pela classe do dia (Normal ou Hiperglicemia: média das glicemias > 180 mg/dL).",
     )
 
-    # Um slider de intervalo para cada variável selecionada
     intervalos = {}
     for var in variaveis:
         minimo, maximo = float(df[var].min()), float(df[var].max())
@@ -70,8 +66,6 @@ with st.sidebar:
             key=f"intervalo_{var}",
         )
 
-# Mantém só os paciente-dias dentro de todos os intervalos escolhidos.
-# Cada dia tem só parte das medições, então valor ausente não elimina o dia.
 df_filtrado = df
 for var, (inicio, fim) in intervalos.items():
     df_filtrado = df_filtrado[df_filtrado[var].isna() | df_filtrado[var].between(inicio, fim)]
@@ -87,10 +81,8 @@ with aba_correlacao:
         f"({df_filtrado['paciente'].nunique()} de {df['paciente'].nunique()} pacientes)."
     )
 
-    # Dashboard 1 (como no rascunho): distribuição (histograma) à esquerda, correlação (heatmap) à direita
     col_distribuicao, col_correlacao = st.columns([1.5, 1])
 
-    # Dias usados na correlação: muda quando o usuário arrasta uma faixa em algum histograma
     df_corr = df_filtrado
 
     with col_distribuicao:
@@ -101,7 +93,6 @@ with aba_correlacao:
         else:
             st.caption("Arraste uma faixa em qualquer histograma para recalcular a correlação só com esses dias.")
 
-            # Um histograma por variável selecionada, em grade de 2 colunas (cada um com a sua escala)
             for inicio_linha in range(0, len(variaveis), 2):
                 colunas = st.columns(2)
                 for coluna, var in zip(colunas, variaveis[inicio_linha : inicio_linha + 2]):
@@ -141,7 +132,6 @@ with aba_correlacao:
                             key=f"hist_{var}_{separar_por_classe}",
                         )
 
-                        # A seleção volta como {campo: [início, fim]}; com bin, o campo pode vir com prefixo do bin
                         for inicio, fim in evento.selection.get("faixa", {}).values():
                             df_corr = df_corr[df_corr[var].between(inicio, fim)]
 
@@ -151,8 +141,6 @@ with aba_correlacao:
         if len(variaveis) < 2:
             st.warning("Selecione pelo menos 2 variáveis para calcular a correlação.")
         else:
-            # Matriz de correlação em formato longo (uma linha por par de variáveis).
-            # Cada par usa só os dias em que as duas foram medidas; com menos de MIN_DIAS dias o par fica vazio.
             MIN_DIAS = 10
             if len(df_corr) < len(df_filtrado):
                 st.caption(f"Faixas selecionadas nos histogramas: {len(df_corr)} paciente-dias.")
@@ -199,7 +187,6 @@ with aba_correlacao:
 with aba_acompanhamento:
     st.subheader("Acompanhamento Glicêmico")
 
-    # Widgets do Dashboard 2 (rascunho: paciente, período e momento da medição, lado a lado)
     col_paciente, col_periodo, col_momento = st.columns(3)
 
     with col_paciente:
@@ -213,7 +200,6 @@ with aba_acompanhamento:
     ins_paciente = insulina_dia if paciente == "Todos" else insulina_dia[insulina_dia["paciente"] == paciente]
 
     with col_periodo:
-        # O período disponível muda com o paciente escolhido
         primeiro_dia, ultimo_dia = glic_paciente["data"].min(), glic_paciente["data"].max()
         periodo = st.slider(
             "Período",
@@ -238,7 +224,6 @@ with aba_acompanhamento:
     ]
     ins_filtrada = ins_paciente[ins_paciente["data"].between(*periodo)]
 
-    # KPIs: o delta compara o recorte com a amostra completa (todos os pacientes, todo o período)
     def resumo(glic, ins):
         return {
             "mediana": glic["valor"].median(),
@@ -251,7 +236,6 @@ with aba_acompanhamento:
     geral = resumo(glicemias, insulina_dia)
 
     def para_data(valor):
-        """Datas da seleção do Altair podem vir em milissegundos ou como texto ISO (em UTC)."""
         data = pd.to_datetime(valor, unit="ms") if isinstance(valor, (int, float)) else pd.to_datetime(valor)
         return data.tz_localize(None) if data.tzinfo else data
 
@@ -264,7 +248,6 @@ with aba_acompanhamento:
         tem_recorte = len(glic) < len(glicemias)
 
         def delta(chave, unidade):
-            # Sem nenhum filtro o recorte é a própria amostra, então não há o que comparar
             if not tem_recorte:
                 return None
             return f"{atual[chave] - geral[chave]:+.1f} {unidade} vs. amostra"
@@ -295,8 +278,6 @@ with aba_acompanhamento:
             )
         st.caption(f"{len(glic)} medições de glicemia de {glic['paciente'].nunique()} paciente(s).")
 
-    # Os KPIs ficam acima dos gráficos (como no rascunho), mas dependem da seleção feita neles:
-    # o container guarda o lugar e é preenchido depois que os gráficos devolvem a seleção
     area_kpis = st.container()
 
     glic_selecionada, ins_selecionada = glic_filtrada, ins_filtrada
@@ -343,7 +324,6 @@ with aba_acompanhamento:
                 "Arraste no gráfico para ver só um trecho do período."
             )
 
-            # Filtra as semanas e os dias de insulina do trecho arrastado no gráfico
             for inicio, fim in evento_semana.selection.get("periodo", {}).values():
                 inicio, fim = para_data(inicio).normalize(), para_data(fim)
                 glic_selecionada = glic_filtrada[glic_filtrada["semana"].between(inicio, fim)]
@@ -385,7 +365,6 @@ with aba_acompanhamento:
             if clicados:
                 glic_selecionada = glic_selecionada[glic_selecionada["momento"].isin(clicados)]
 
-        # Terceiro visual: distribuição das medições do recorte final (filtros + seleções dos dois gráficos)
         st.markdown("**Distribuição das medições de glicemia**")
         distribuicao = (
             alt.Chart(glic_selecionada[["valor", "faixa"]])
