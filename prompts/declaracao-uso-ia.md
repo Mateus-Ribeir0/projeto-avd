@@ -57,17 +57,23 @@ Mesma ferramenta (Claude Code), numa conversa só, seguindo os passos do `ROTEIR
 
 ## Verificação dos requisitos do projeto
 
-Pedi à IA para conferir o app contra a lista de requisitos da atividade e testar cada item rodando o app (testes automáticos com `streamlit.testing` e no navegador). Resultado:
+Pedi à IA para conferir o projeto contra a atividade, o `ROTEIRO.md` e os slides das Aulas 21, 22 e 23 (hands-on, checagem do repositório e checklist final), testando o app com `streamlit.testing` e no navegador. Itens que não estavam cumpridos foram corrigidos; os demais foram só conferidos.
 
-| Requisito | Situação |
+| Requisito (origem) | Situação |
 |---|---|
-| Sidebar: 1 seletor de variáveis | Cumprido (multiselect de variáveis quantitativas) |
-| Sidebar: 1 filtro de intervalo (slider) | Cumprido (um slider por variável) |
-| Dashboard 1: mapa de calor de correlação | Cumprido (Spearman) |
-| Dashboard 1: um histograma por variável avaliada | Corrigido: antes havia um histograma com seletor; agora há um por variável selecionada |
-| Dashboard 2: 3 a 5 métricas | Cumprido (5 métricas) |
-| Dashboard 2: 3 visuais além das métricas | Corrigido: antes eram 2; foi adicionada a distribuição das medições por faixa |
-| Dois dashboards em abas | Cumprido (`st.tabs`) |
-| Widgets respondem / casos de borda (0, 1, 2+ variáveis, filtros sem dados) | Testado, sem erros |
-| Sem dados sensíveis | Conferido: pacientes só como número, dataset público, sem chaves no repositório |
-| Deploy e link no README | Pendente (Aula 23) |
+| Notebook da EDA em `notebooks/`, salvando dados originais e tratados (Aula 21) | Cumprido: `data/raw/` e `data/clean/` |
+| Sidebar com 1 seletor de variáveis e 1 slider de intervalo (Aula 21) | Cumprido |
+| Rascunhos do Dashboard 1 e 2 em `entregas/` (Aulas 21 e 22) | Cumprido |
+| Gráficos interativos com `@st.cache_data` (Aula 22) | Cumprido: Altair nos dois dashboards |
+| Dashboard 1: heatmap de correlação e um histograma por variável (atividade, Aula 22) | Corrigido: antes havia um histograma só, com seletor |
+| Testes com 0, 1 e 2+ variáveis e combinações de widgets (Aula 22) | Testado, sem erros |
+| Identidade visual em `.streamlit/config.toml` (Aula 22) | Cumprido: preto e amarelo |
+| Abas separando os dashboards (Aula 22) | Cumprido |
+| Dashboard 2: 3 a 5 métricas, claras, acionáveis e ligadas a um público (Aulas 22 e 23) | Cumprido: 5 métricas, justificadas em `entregas/justificativa-metricas.md` |
+| Dashboard 2: 3 visuais além das métricas, com seleção cruzada em Altair (Aulas 22 e 23) | Corrigido: antes eram 2 |
+| Gráfico de barras agrupando uma variável (Aula 22) | Cumprido: faixas por momento do dia |
+| `git status` limpo, push feito, `app.py` na raiz rodando sem erro (Aula 23) | Conferido |
+| `data/clean/dataset.csv` versionado e caminho relativo (Aula 23) | Conferido |
+| `requirements.txt` com as bibliotecas usadas (Aula 23) | Conferido (Altair já vem com o Streamlit) |
+| Sem arquivos sensíveis (`secrets.toml`, `data/raw/dataset.csv` fora do Git) (Aula 23) | Conferido; pacientes aparecem só como número |
+| Deploy, teste em janela anônima e link no README (Aula 23) | Pendente |
