@@ -90,7 +90,7 @@ with aba_correlacao:
     # Dashboard 1 (como no rascunho): distribuição (histograma) à esquerda, correlação (heatmap) à direita
     col_distribuicao, col_correlacao = st.columns([1.5, 1])
 
-    # Dias usados na correlação: muda quando o usuário arrasta uma faixa no histograma
+    # Dias usados na correlação: muda quando o usuário arrasta uma faixa em algum histograma
     df_corr = df_filtrado
 
     with col_distribuicao:
@@ -99,39 +99,51 @@ with aba_correlacao:
         if not variaveis:
             st.warning("Selecione pelo menos 1 variável para ver a distribuição.")
         else:
-            var_hist = st.selectbox("Variável do histograma", options=variaveis)
-            dados_hist = df_filtrado[[var_hist, "classe"]].dropna()
+            st.caption("Arraste uma faixa em qualquer histograma para recalcular a correlação só com esses dias.")
 
-            if dados_hist.empty:
-                st.warning(f"Nenhum paciente-dia com {var_hist} dentro dos intervalos escolhidos.")
-            else:
-                faixa = alt.selection_interval(name="faixa", encodings=["x"])
+            # Um histograma por variável selecionada, em grade de 2 colunas (cada um com a sua escala)
+            for inicio_linha in range(0, len(variaveis), 2):
+                colunas = st.columns(2)
+                for coluna, var in zip(colunas, variaveis[inicio_linha : inicio_linha + 2]):
+                    with coluna:
+                        dados_hist = df_filtrado[[var, "classe"]].dropna()
+                        if dados_hist.empty:
+                            st.warning(f"Nenhum paciente-dia com {var} dentro dos intervalos escolhidos.")
+                            continue
 
-                histograma = (
-                    alt.Chart(dados_hist)
-                    .mark_bar(color=AMARELO)
-                    .encode(
-                        x=alt.X(f"{var_hist}:Q", bin=alt.Bin(maxbins=30), title=var_hist),
-                        y=alt.Y("count()", title="Paciente-dias"),
-                        tooltip=[alt.Tooltip("count()", title="Paciente-dias")],
-                    )
-                    .add_params(faixa)
-                    .properties(height=380)
-                )
-                if separar_por_classe:
-                    histograma = histograma.encode(
-                        color=alt.Color("classe:N", title="Classe", scale=CORES_CLASSE),
-                        tooltip=["classe", alt.Tooltip("count()", title="Paciente-dias")],
-                    )
+                        faixa = alt.selection_interval(name="faixa", encodings=["x"])
+                        histograma = (
+                            alt.Chart(dados_hist)
+                            .mark_bar(color=AMARELO)
+                            .encode(
+                                x=alt.X(f"{var}:Q", bin=alt.Bin(maxbins=20), title=var),
+                                y=alt.Y("count()", title="Paciente-dias"),
+                                tooltip=[alt.Tooltip("count()", title="Paciente-dias")],
+                            )
+                            .add_params(faixa)
+                            .properties(height=200)
+                        )
+                        if separar_por_classe:
+                            histograma = histograma.encode(
+                                color=alt.Color(
+                                    "classe:N",
+                                    title=None,
+                                    scale=CORES_CLASSE,
+                                    legend=alt.Legend(orient="top"),
+                                ),
+                                tooltip=["classe", alt.Tooltip("count()", title="Paciente-dias")],
+                            )
 
-                evento = st.altair_chart(
-                    histograma, width="stretch", on_select="rerun", key=f"hist_{var_hist}_{separar_por_classe}"
-                )
-                st.caption("Arraste uma faixa no histograma para recalcular a correlação só com esses dias.")
+                        evento = st.altair_chart(
+                            histograma,
+                            width="stretch",
+                            on_select="rerun",
+                            key=f"hist_{var}_{separar_por_classe}",
+                        )
 
-                # A seleção volta como {campo: [início, fim]}; com bin, o campo pode vir com prefixo do bin
-                for inicio, fim in evento.selection.get("faixa", {}).values():
-                    df_corr = df_filtrado[df_filtrado[var_hist].between(inicio, fim)]
+                        # A seleção volta como {campo: [início, fim]}; com bin, o campo pode vir com prefixo do bin
+                        for inicio, fim in evento.selection.get("faixa", {}).values():
+                            df_corr = df_corr[df_corr[var].between(inicio, fim)]
 
     with col_correlacao:
         st.subheader("Correlação (Spearman)")
