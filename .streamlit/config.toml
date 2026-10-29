@@ -1,20 +1,12 @@
-# Configuração do Streamlit. Descomente e ajuste conforme o projeto avançar.
-# O tema pode ser trocado pelo menu ⋮ → Settings → Choose app theme.
+# Configuração do Streamlit.
+# Identidade visual: fundo preto, destaque em amarelo (mesmo amarelo dos gráficos do app.py).
 
 [theme]
-paddingTop = "0.0rem"     # espaço abaixo da barra do topo (valor entre aspas)
-# font = "sans serif"     # "sans serif", "serif" ou "monospace"
-
-[theme.light]
-primaryColor = "#c1121f"            # cor de destaque (widgets, links): mesmo vermelho dos histogramas
-backgroundColor = "#ffffff"         # fundo da página
-secondaryBackgroundColor = "#f0f2f6"  # fundo da sidebar e de widgets
-textColor = "#31333f"               # cor do texto
-borderColor = "#d5dae5"
-
-[theme.dark]
-primaryColor = "#c1121f"
-backgroundColor = "#0e1117"
-secondaryBackgroundColor = "#262730"
-textColor = "#fafafa"
-borderColor = "#41444e"
+base = "dark"
+paddingTop = "0.0rem"               # espaço abaixo da barra do topo (valor entre aspas)
+font = "sans serif"                 # "sans serif", "serif" ou "monospace"
+primaryColor = "#f5c518"            # cor de destaque (widgets, links, abas)
+backgroundColor = "#0d0d0d"         # fundo da página
+secondaryBackgroundColor = "#1a1a1a"  # fundo da sidebar, dos widgets e das métricas
+textColor = "#f2f2f2"               # cor do texto
+borderColor = "#333333"
