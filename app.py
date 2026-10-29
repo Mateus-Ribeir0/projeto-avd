@@ -155,7 +155,7 @@ with aba_correlacao:
             # Cada par usa só os dias em que as duas foram medidas; com menos de MIN_DIAS dias o par fica vazio.
             MIN_DIAS = 10
             if len(df_corr) < len(df_filtrado):
-                st.caption(f"Faixa selecionada no histograma: {len(df_corr)} paciente-dias.")
+                st.caption(f"Faixas selecionadas nos histogramas: {len(df_corr)} paciente-dias.")
             corr = (
                 df_corr[variaveis]
                 .corr(method="spearman", min_periods=MIN_DIAS)
@@ -384,6 +384,30 @@ with aba_acompanhamento:
             clicados = [item["momento"] for item in evento_momento.selection.get("momento", [])]
             if clicados:
                 glic_selecionada = glic_selecionada[glic_selecionada["momento"].isin(clicados)]
+
+        # Terceiro visual: distribuição das medições do recorte final (filtros + seleções dos dois gráficos)
+        st.markdown("**Distribuição das medições de glicemia**")
+        distribuicao = (
+            alt.Chart(glic_selecionada[["valor", "faixa"]])
+            .mark_bar()
+            .encode(
+                x=alt.X("valor:Q", bin=alt.Bin(step=10), title="Glicemia (mg/dL)"),
+                y=alt.Y("count()", title="Medições"),
+                color=alt.Color("faixa:N", title="Faixa", scale=CORES_FAIXA, sort=ORDEM_FAIXA),
+                tooltip=["faixa", alt.Tooltip("count()", title="Medições")],
+            )
+            .properties(height=240)
+        )
+        regras = (
+            alt.Chart(pd.DataFrame({"limite": [LIMITE_HIPO, LIMITE_HIPER]}))
+            .mark_rule(color="white", strokeDash=[4, 4])
+            .encode(x="limite:Q")
+        )
+        st.altair_chart(distribuicao + regras, width="stretch")
+        st.caption(
+            f"Linhas tracejadas: limites de {LIMITE_HIPO} e {LIMITE_HIPER} mg/dL. "
+            "Mostra as medições que entram nos KPIs acima."
+        )
 
     with area_kpis:
         mostrar_kpis(glic_selecionada, ins_selecionada)
