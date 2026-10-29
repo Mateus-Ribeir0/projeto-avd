@@ -1,13 +1,13 @@
 # Declaração de Uso de IA
 
 **Nome:** Mateus Ribeiro
-**Data:** 29/10/2026
+**Data:** 29/10/2026 (Aulas 21 e 22)
 
 ## Ferramenta
 
 Claude Code (Anthropic), com as skills do Streamlit instaladas via `streamlit skills --yes`.
 
-## Prompt usado
+## Aula 21 — Prompt usado
 
 1. **Rascunho → esqueleto do `app.py`**: template de [layout-skeleton-prompt.md](layout-skeleton-prompt.md), com a imagem do rascunho anexada ([../entregas/rascunho-dashboard1.png](../entregas/rascunho-dashboard1.png)):
 
@@ -30,8 +30,25 @@ nas partes dos gráficos.
 
 2. **Organização do código**: pedidos para organizar o `app.py` e o `src/data_loader.py` (separar o carregamento e a montagem paciente-dia em funções, nomes de variáveis e comentários em português, filtros aplicados de forma consistente) e para organizar os arquivos do repositório nos caminhos pedidos pela atividade.
 
-## O que foi aceito, modificado ou rejeitado e por quê
+## Aula 21 — O que foi aceito, modificado ou rejeitado e por quê
 
 - **Aceito:** a estrutura do layout (sidebar com filtros + duas colunas para correlação e distribuição), o seletor de variáveis, um slider de intervalo por variável e o toggle de classe.
 - **Modificado:** o esqueleto foi adaptado do Heart Disease Dataset para o Diabetes Dataset: a lista de variáveis passou a vir do `data_loader` e o filtro de intervalo passou a manter os dias com medição ausente, já que cada paciente-dia tem só parte das medições.
 - **Rejeitado:** implementar os gráficos (heatmap e histogramas) nesta etapa, porque a atividade pede só o esqueleto com os widgets; eles ficaram como `# TODO`.
+
+## Aula 22 — Prompts usados
+
+Mesma ferramenta (Claude Code), numa conversa só, seguindo os passos do `ROTEIRO.md`. Resumo dos pedidos:
+
+1. Implementar os gráficos do Dashboard 1 em Altair seguindo o rascunho (histograma à esquerda, heatmap de correlação à direita), com `@st.cache_data` no carregamento dos dados.
+2. Testar o Dashboard 1 com 0, 1 e 2+ variáveis e com intervalos estreitos, e corrigir o que quebrasse.
+3. Ligar o histograma à correlação com seleção do Altair (guia `ALTAIR-CROSSFILTER.md`).
+4. Montar a identidade visual em preto e amarelo no `.streamlit/config.toml`.
+5. Estruturar o Dashboard 2 na ordem do roteiro (variáveis → métricas → widgets → rascunho), separar os dashboards em abas e implementar widgets, `st.metric` e gráficos Altair com seleção ligada aos KPIs.
+6. Organizar o código e os commits por etapa.
+
+## Aula 22 — O que foi aceito, modificado ou rejeitado e por quê
+
+- **Aceito:** gráficos em Altair nos dois dashboards; mediana (e não média) como medida central da glicemia, por causa da assimetria vista no EDA; KPIs em proporção de medições por faixa (hipo < 70, alvo 70–180, hiper > 180), com o mesmo limite de 180 mg/dL usado na classe do Dashboard 1; seleção por arraste (período) e por clique (momento do dia) atualizando os KPIs via `on_select`.
+- **Modificado:** a correlação passou a exigir pelo menos 10 dias em comum por par (`min_periods`), porque cada paciente-dia tem só parte das medições e alguns pares ficavam com valores sem sentido; os KPIs ficam acima dos gráficos, como no rascunho, usando um `st.container` preenchido depois da seleção; rótulos do heatmap e formato das datas ajustados depois de ver o app rodando.
+- **Rejeitado:** usar `st.stop()` quando não há dados para a correlação, porque interromperia também o Dashboard 2 na outra aba; trocado por avisos em cada gráfico.
