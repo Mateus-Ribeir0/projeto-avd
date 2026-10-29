@@ -27,44 +27,53 @@ glicemias = montar_glicemias(eventos)
 insulina_dia = montar_insulina_dia(eventos)
 
 VARS_QUANT = [c for c in COLS_GLICEMIA + COLS_INSULINA if df[c].notna().any()]
+MIN_DIAS = 10
 
 AMARELO = "#f5c518"
+AZUL = "#6c8ebf"
+LARANJA = "#e8590c"
 CINZA = "#8a8a8a"
 CINZA_ESCURO = "#4d4d4d"
 CORES_CLASSE = alt.Scale(
     domain=["Normal", "Hiperglicemia", "Sem glicemia"],
     range=[CINZA, AMARELO, CINZA_ESCURO],
 )
+ESCALA_CORRELACAO = alt.Scale(domain=[-1, 0, 1], range=[AZUL, "#262626", AMARELO])
 ORDEM_FAIXA = ["Hipoglicemia", "Na faixa-alvo", "Hiperglicemia"]
-CORES_FAIXA = alt.Scale(domain=ORDEM_FAIXA, range=["#6c8ebf", AMARELO, "#e8590c"])
+CORES_FAIXA = alt.Scale(domain=ORDEM_FAIXA, range=[AZUL, AMARELO, LARANJA])
+
+
+def titulo_cartao(texto):
+    st.markdown(f"##### {texto}")
+
 
 with st.sidebar:
     st.header("Filtros do Dashboard 1")
 
     variaveis = st.multiselect(
-        "Variáveis Quantitativas",
+        "Variáveis quantitativas",
         options=VARS_QUANT,
         default=VARS_QUANT,
-        help="Selecione as variáveis quantitativas que deseja analisar no dashboard.",
     )
 
     separar_por_classe = st.toggle(
-        "Distinguir por Classe",
+        "Distinguir por classe",
         value=False,
-        help="Colore a distribuição pela classe do dia (Normal ou Hiperglicemia: média das glicemias > 180 mg/dL).",
+        help="Normal ou Hiperglicemia (média das glicemias do dia > 180 mg/dL).",
     )
 
     intervalos = {}
-    for var in variaveis:
-        minimo, maximo = float(df[var].min()), float(df[var].max())
-        intervalos[var] = st.slider(
-            f"Intervalo de {var}",
-            min_value=minimo,
-            max_value=maximo,
-            value=(minimo, maximo),
-            step=1.0,
-            key=f"intervalo_{var}",
-        )
+    with st.expander("Intervalos das variáveis", expanded=True):
+        for var in variaveis:
+            minimo, maximo = float(df[var].min()), float(df[var].max())
+            intervalos[var] = st.slider(
+                var,
+                min_value=minimo,
+                max_value=maximo,
+                value=(minimo, maximo),
+                step=1.0,
+                key=f"intervalo_{var}",
+            )
 
 df_filtrado = df
 for var, (inicio, fim) in intervalos.items():
@@ -76,52 +85,52 @@ aba_correlacao, aba_acompanhamento = st.tabs(
 
 with aba_correlacao:
     st.subheader("Avaliação de Correlação entre Variáveis Quantitativas")
-    st.caption(
-        f"{len(df_filtrado)} de {len(df)} paciente-dias dentro dos intervalos escolhidos "
-        f"({df_filtrado['paciente'].nunique()} de {df['paciente'].nunique()} pacientes)."
-    )
 
-    col_distribuicao, col_correlacao = st.columns([1.5, 1])
+    r1, r2, r3 = st.columns(3)
+    r1.metric("Paciente-dias no filtro", f"{len(df_filtrado)} de {len(df)}", border=True)
+    r2.metric(
+        "Pacientes",
+        f"{df_filtrado['paciente'].nunique()} de {df['paciente'].nunique()}",
+        border=True,
+    )
+    r3.metric("Variáveis selecionadas", f"{len(variaveis)} de {len(VARS_QUANT)}", border=True)
+
+    area_correlacao = st.container()
 
     df_corr = df_filtrado
 
-    with col_distribuicao:
-        st.subheader("Distribuição")
+    with st.container(border=True):
+        titulo_cartao("Distribuição por variável")
 
         if not variaveis:
             st.warning("Selecione pelo menos 1 variável para ver a distribuição.")
         else:
-            st.caption("Arraste uma faixa em qualquer histograma para recalcular a correlação só com esses dias.")
+            st.caption("Arraste uma faixa em um histograma para recalcular a correlação só com esses dias.")
 
-            for inicio_linha in range(0, len(variaveis), 2):
-                colunas = st.columns(2)
-                for coluna, var in zip(colunas, variaveis[inicio_linha : inicio_linha + 2]):
+            for inicio_linha in range(0, len(variaveis), 3):
+                colunas = st.columns(3)
+                for coluna, var in zip(colunas, variaveis[inicio_linha : inicio_linha + 3]):
                     with coluna:
                         dados_hist = df_filtrado[[var, "classe"]].dropna()
                         if dados_hist.empty:
-                            st.warning(f"Nenhum paciente-dia com {var} dentro dos intervalos escolhidos.")
+                            st.warning(f"Sem dados de {var} nos intervalos escolhidos.")
                             continue
 
                         faixa = alt.selection_interval(name="faixa", encodings=["x"])
                         histograma = (
-                            alt.Chart(dados_hist)
+                            alt.Chart(dados_hist, title=var)
                             .mark_bar(color=AMARELO)
                             .encode(
-                                x=alt.X(f"{var}:Q", bin=alt.Bin(maxbins=20), title=var),
-                                y=alt.Y("count()", title="Paciente-dias"),
+                                x=alt.X(f"{var}:Q", bin=alt.Bin(maxbins=20), title=None),
+                                y=alt.Y("count()", title=None),
                                 tooltip=[alt.Tooltip("count()", title="Paciente-dias")],
                             )
                             .add_params(faixa)
-                            .properties(height=200)
+                            .properties(height=170)
                         )
                         if separar_por_classe:
                             histograma = histograma.encode(
-                                color=alt.Color(
-                                    "classe:N",
-                                    title=None,
-                                    scale=CORES_CLASSE,
-                                    legend=alt.Legend(orient="top"),
-                                ),
+                                color=alt.Color("classe:N", scale=CORES_CLASSE, legend=None),
                                 tooltip=["classe", alt.Tooltip("count()", title="Paciente-dias")],
                             )
 
@@ -135,15 +144,15 @@ with aba_correlacao:
                         for inicio, fim in evento.selection.get("faixa", {}).values():
                             df_corr = df_corr[df_corr[var].between(inicio, fim)]
 
-    with col_correlacao:
-        st.subheader("Correlação (Spearman)")
+            if separar_por_classe:
+                st.caption("Cores: amarelo = Hiperglicemia · cinza = Normal · cinza escuro = Sem glicemia.")
+
+    with area_correlacao:
+        col_heatmap, col_pares = st.columns([3, 2])
 
         if len(variaveis) < 2:
-            st.warning("Selecione pelo menos 2 variáveis para calcular a correlação.")
+            col_heatmap.warning("Selecione pelo menos 2 variáveis para calcular a correlação.")
         else:
-            MIN_DIAS = 10
-            if len(df_corr) < len(df_filtrado):
-                st.caption(f"Faixas selecionadas nos histogramas: {len(df_corr)} paciente-dias.")
             corr = (
                 df_corr[variaveis]
                 .corr(method="spearman", min_periods=MIN_DIAS)
@@ -155,34 +164,53 @@ with aba_correlacao:
             sem_dados = corr["correlacao"].isna()
 
             if sem_dados.all():
-                st.warning("Poucos paciente-dias nos intervalos escolhidos para calcular a correlação.")
+                col_heatmap.warning("Poucos paciente-dias nos intervalos escolhidos para calcular a correlação.")
             else:
-                if sem_dados.any():
-                    st.caption(f"Células vazias: pares com menos de {MIN_DIAS} dias medidos em comum.")
+                with col_heatmap.container(border=True):
+                    titulo_cartao("Correlação (Spearman)")
+                    if len(df_corr) < len(df_filtrado):
+                        st.caption(f"Faixa selecionada nos histogramas: {len(df_corr)} paciente-dias.")
 
-                base = alt.Chart(corr[~sem_dados]).encode(
-                    x=alt.X(
-                        "var_x:N",
-                        title=None,
-                        sort=variaveis,
-                        axis=alt.Axis(labelAngle=-45, labelOverlap=False, labelLimit=160),
-                    ),
-                    y=alt.Y("var_y:N", title=None, sort=variaveis, axis=alt.Axis(labelLimit=160)),
-                )
-                heatmap = base.mark_rect().encode(
-                    color=alt.Color(
-                        "correlacao:Q",
-                        title="Spearman",
-                        scale=alt.Scale(domain=[-1, 0, 1], range=["#6c8ebf", "#262626", AMARELO]),
-                    ),
-                    tooltip=["var_x", "var_y", alt.Tooltip("correlacao:Q", format=".2f")],
-                )
-                valores = base.mark_text().encode(
-                    text=alt.Text("correlacao:Q", format=".2f"),
-                    color=alt.condition("datum.correlacao > 0.5", alt.value("black"), alt.value("white")),
-                )
+                    base = alt.Chart(corr[~sem_dados]).encode(
+                        x=alt.X(
+                            "var_x:N",
+                            title=None,
+                            sort=variaveis,
+                            axis=alt.Axis(labelAngle=-35, labelOverlap=False, labelLimit=160),
+                        ),
+                        y=alt.Y("var_y:N", title=None, sort=variaveis, axis=alt.Axis(labelLimit=160)),
+                    )
+                    heatmap = base.mark_rect().encode(
+                        color=alt.Color("correlacao:Q", title="ρ", scale=ESCALA_CORRELACAO),
+                        tooltip=["var_x", "var_y", alt.Tooltip("correlacao:Q", format=".2f")],
+                    )
+                    valores = base.mark_text().encode(
+                        text=alt.Text("correlacao:Q", format=".2f"),
+                        color=alt.condition("datum.correlacao > 0.5", alt.value("black"), alt.value("white")),
+                    )
+                    st.altair_chart((heatmap + valores).properties(height=340), width="stretch")
 
-                st.altair_chart((heatmap + valores).properties(height=380), width="stretch")
+                with col_pares.container(border=True):
+                    titulo_cartao("Pares mais correlacionados")
+
+                    ordem = {var: i for i, var in enumerate(variaveis)}
+                    pares = corr[~sem_dados & (corr["var_y"].map(ordem) > corr["var_x"].map(ordem))].copy()
+                    pares["par"] = pares["var_x"] + " × " + pares["var_y"]
+                    pares["forca"] = pares["correlacao"].abs()
+                    pares = pares.nlargest(6, "forca")
+
+                    base_pares = alt.Chart(pares).encode(
+                        y=alt.Y("par:N", title=None, sort="-x", axis=alt.Axis(labelLimit=260)),
+                        x=alt.X("correlacao:Q", title="ρ"),
+                        tooltip=["par", alt.Tooltip("correlacao:Q", format=".2f")],
+                    )
+                    barras_pares = base_pares.mark_bar().encode(
+                        color=alt.condition("datum.correlacao >= 0", alt.value(AMARELO), alt.value(AZUL)),
+                    )
+                    rotulos_pares = base_pares.mark_text(align="left", dx=4, color="white").encode(
+                        text=alt.Text("correlacao:Q", format=".2f"),
+                    )
+                    st.altair_chart((barras_pares + rotulos_pares).properties(height=340), width="stretch")
 
 with aba_acompanhamento:
     st.subheader("Acompanhamento Glicêmico")
