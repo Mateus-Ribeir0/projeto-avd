@@ -46,6 +46,7 @@ Mesma ferramenta (Claude Code), numa conversa só, seguindo os passos do `ROTEIR
 4. Montar a identidade visual em preto e amarelo no `.streamlit/config.toml`.
 5. Estruturar o Dashboard 2 na ordem do roteiro (variáveis → métricas → widgets → rascunho), separar os dashboards em abas e implementar widgets, `st.metric` e gráficos Altair com seleção ligada aos KPIs.
 6. Organizar o código e os commits por etapa.
+7. Conferir o app contra os visuais mínimos da atividade: isso levou a um histograma por variável no Dashboard 1 (antes era um só, com seletor) e a um terceiro visual no Dashboard 2 (distribuição das medições por faixa).
 
 ## Aula 22 — O que foi aceito, modificado ou rejeitado e por quê
 
