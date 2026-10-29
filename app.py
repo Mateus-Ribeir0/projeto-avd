@@ -1,4 +1,5 @@
 import altair as alt
+import pandas as pd
 import streamlit as st
 
 from src.data_loader import (
@@ -36,6 +37,8 @@ CORES_CLASSE = alt.Scale(
     domain=["Normal", "Hiperglicemia", "Sem glicemia"],
     range=[CINZA, AMARELO, CINZA_ESCURO],
 )
+ORDEM_FAIXA = ["Hipoglicemia", "Na faixa-alvo", "Hiperglicemia"]
+CORES_FAIXA = alt.Scale(domain=ORDEM_FAIXA, range=["#6c8ebf", AMARELO, "#e8590c"])
 
 # Sidebar: filtros do Dashboard 1 (variáveis + intervalo)
 with st.sidebar:
@@ -230,6 +233,11 @@ with aba_acompanhamento:
 
     geral = resumo(glicemias, insulina_dia)
 
+    def para_data(valor):
+        """Datas da seleção do Altair podem vir em milissegundos ou como texto ISO (em UTC)."""
+        data = pd.to_datetime(valor, unit="ms") if isinstance(valor, (int, float)) else pd.to_datetime(valor)
+        return data.tz_localize(None) if data.tzinfo else data
+
     def mostrar_kpis(glic, ins):
         if glic.empty:
             st.warning("Nenhuma medição de glicemia com os filtros escolhidos.")
@@ -270,6 +278,95 @@ with aba_acompanhamento:
             )
         st.caption(f"{len(glic)} medições de glicemia de {glic['paciente'].nunique()} paciente(s).")
 
-    mostrar_kpis(glic_filtrada, ins_filtrada)
+    # Os KPIs ficam acima dos gráficos (como no rascunho), mas dependem da seleção feita neles:
+    # o container guarda o lugar e é preenchido depois que os gráficos devolvem a seleção
+    area_kpis = st.container()
 
-    # TODO: gráficos Altair (glicemia por semana e faixas por momento do dia) ligados aos KPIs
+    glic_selecionada, ins_selecionada = glic_filtrada, ins_filtrada
+
+    if not glic_filtrada.empty:
+        col_semana, col_faixas = st.columns([1.5, 1])
+
+        with col_semana:
+            st.markdown("**Glicemia mediana por semana**")
+
+            por_semana = glic_filtrada.groupby("semana", as_index=False).agg(
+                mediana=("valor", "median"), medicoes=("valor", "size")
+            )
+            periodo_grafico = alt.selection_interval(name="periodo", encodings=["x"])
+
+            faixa_alvo = (
+                alt.Chart(pd.DataFrame({"inicio": [LIMITE_HIPO], "fim": [LIMITE_HIPER]}))
+                .mark_rect(color=AMARELO, opacity=0.12)
+                .encode(y="inicio:Q", y2="fim:Q")
+            )
+            linha = (
+                alt.Chart(por_semana)
+                .mark_line(color=AMARELO, point=alt.OverlayMarkDef(color=AMARELO))
+                .encode(
+                    x=alt.X("semana:T", title="Semana", axis=alt.Axis(format="%m/%Y")),
+                    y=alt.Y("mediana:Q", title="Glicemia mediana (mg/dL)"),
+                    tooltip=[
+                        alt.Tooltip("semana:T", title="Semana de", format="%d/%m/%Y"),
+                        alt.Tooltip("mediana:Q", title="Mediana (mg/dL)", format=".0f"),
+                        alt.Tooltip("medicoes:Q", title="Medições"),
+                    ],
+                )
+                .add_params(periodo_grafico)
+            )
+
+            evento_semana = st.altair_chart(
+                (faixa_alvo + linha).properties(height=320),
+                width="stretch",
+                on_select="rerun",
+                key=f"semanas_{paciente}",
+            )
+            st.caption(
+                f"Faixa clara: alvo de {LIMITE_HIPO} a {LIMITE_HIPER} mg/dL. "
+                "Arraste no gráfico para ver só um trecho do período."
+            )
+
+            # Filtra as semanas e os dias de insulina do trecho arrastado no gráfico
+            for inicio, fim in evento_semana.selection.get("periodo", {}).values():
+                inicio, fim = para_data(inicio).normalize(), para_data(fim)
+                glic_selecionada = glic_filtrada[glic_filtrada["semana"].between(inicio, fim)]
+                dias_insulina = pd.to_datetime(ins_filtrada["data"])
+                ins_selecionada = ins_filtrada[dias_insulina.between(inicio, fim + pd.Timedelta(days=6))]
+
+        with col_faixas:
+            st.markdown("**Faixas por momento do dia**")
+
+            por_momento = (
+                glic_selecionada.groupby(["momento", "faixa"], as_index=False)
+                .size()
+                .rename(columns={"size": "medicoes"})
+            )
+            por_momento["ordem"] = por_momento["faixa"].map(ORDEM_FAIXA.index)
+            clique = alt.selection_point(name="momento", fields=["momento"])
+
+            barras = (
+                alt.Chart(por_momento)
+                .mark_bar()
+                .encode(
+                    y=alt.Y("momento:N", title=None, sort=list(MOMENTOS.values())),
+                    x=alt.X("medicoes:Q", stack="normalize", title="Medições", axis=alt.Axis(format="%")),
+                    color=alt.Color("faixa:N", title="Faixa", scale=CORES_FAIXA, sort=ORDEM_FAIXA),
+                    order=alt.Order("ordem:Q"),
+                    opacity=alt.condition(clique, alt.value(1), alt.value(0.35)),
+                    tooltip=["momento", "faixa", alt.Tooltip("medicoes:Q", title="Medições")],
+                )
+                .add_params(clique)
+                .properties(height=320)
+            )
+
+            evento_momento = st.altair_chart(
+                barras, width="stretch", on_select="rerun", key=f"momentos_grafico_{paciente}"
+            )
+            st.caption("Clique num momento do dia para ver os KPIs só dele (shift + clique para vários).")
+
+            clicados = [item["momento"] for item in evento_momento.selection.get("momento", [])]
+            if clicados:
+                glic_selecionada = glic_selecionada[glic_selecionada["momento"].isin(clicados)]
+
+    with area_kpis:
+        mostrar_kpis(glic_selecionada, ins_selecionada)
