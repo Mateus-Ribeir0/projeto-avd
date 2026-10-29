@@ -1,3 +1,4 @@
+import altair as alt
 import streamlit as st
 
 from src.data_loader import COLS_GLICEMIA, COLS_INSULINA, load_data, montar_paciente_dia
@@ -14,6 +15,15 @@ df = montar_paciente_dia(eventos)
 
 # Variáveis quantitativas do estudo (mesma lista COLS_CORR do notebook de EDA)
 VARS_QUANT = [c for c in COLS_GLICEMIA + COLS_INSULINA if df[c].notna().any()]
+
+# Paleta do app: amarelo de destaque sobre fundo escuro (mesmas cores do config.toml)
+AMARELO = "#f5c518"
+CINZA = "#8a8a8a"
+CINZA_ESCURO = "#4d4d4d"
+CORES_CLASSE = alt.Scale(
+    domain=["Normal", "Hiperglicemia", "Sem glicemia"],
+    range=[CINZA, AMARELO, CINZA_ESCURO],
+)
 
 # Sidebar: filtros (variáveis + intervalo)
 with st.sidebar:
@@ -56,24 +66,65 @@ st.caption(
     f"({df_filtrado['paciente'].nunique()} de {df['paciente'].nunique()} pacientes)."
 )
 
-# Dashboard 1: correlação (heatmap) à esquerda, distribuição (histograma) à direita
-col_correlacao, col_distribuicao = st.columns([1, 1.5])
-
-with col_correlacao:
-    st.subheader("Correlação")
-
-    if len(variaveis) < 2:
-        st.warning("Selecione pelo menos 2 variáveis para calcular a correlação.")
-    else:
-        # TODO: matriz de correlação das variáveis selecionadas (df_filtrado[variaveis].corr(method="spearman"))
-        # TODO: heatmap (plotly px.imshow) e exibir com st.plotly_chart
-        pass
+# Dashboard 1 (como no rascunho): distribuição (histograma) à esquerda, correlação (heatmap) à direita
+col_distribuicao, col_correlacao = st.columns([1.5, 1])
 
 with col_distribuicao:
     st.subheader("Distribuição")
 
-    # TODO: st.selectbox para escolher a variável do histograma
-    # TODO: histograma (plotly px.histogram) e exibir com st.plotly_chart
-    #       se separar_por_classe: color="classe"
+    var_hist = st.selectbox("Variável do histograma", options=variaveis)
+
+    histograma = (
+        alt.Chart(df_filtrado[[var_hist, "classe"]].dropna())
+        .mark_bar(color=AMARELO)
+        .encode(
+            x=alt.X(f"{var_hist}:Q", bin=alt.Bin(maxbins=30), title=var_hist),
+            y=alt.Y("count()", title="Paciente-dias"),
+            tooltip=[alt.Tooltip("count()", title="Paciente-dias")],
+        )
+        .properties(height=380)
+    )
+    if separar_por_classe:
+        histograma = histograma.encode(
+            color=alt.Color("classe:N", title="Classe", scale=CORES_CLASSE),
+            tooltip=["classe", alt.Tooltip("count()", title="Paciente-dias")],
+        )
+
+    st.altair_chart(histograma, width="stretch")
+
+with col_correlacao:
+    st.subheader("Correlação (Spearman)")
+
+    if len(variaveis) < 2:
+        st.warning("Selecione pelo menos 2 variáveis para calcular a correlação.")
+    else:
+        # Matriz de correlação em formato longo (uma linha por par de variáveis)
+        corr = (
+            df_filtrado[variaveis]
+            .corr(method="spearman")
+            .rename_axis(index="var_y", columns="var_x")
+            .stack()
+            .rename("correlacao")
+            .reset_index()
+        )
+
+        base = alt.Chart(corr).encode(
+            x=alt.X("var_x:N", title=None, sort=variaveis, axis=alt.Axis(labelAngle=-45)),
+            y=alt.Y("var_y:N", title=None, sort=variaveis),
+        )
+        heatmap = base.mark_rect().encode(
+            color=alt.Color(
+                "correlacao:Q",
+                title="Spearman",
+                scale=alt.Scale(domain=[-1, 0, 1], range=["#6c8ebf", "#262626", AMARELO]),
+            ),
+            tooltip=["var_x", "var_y", alt.Tooltip("correlacao:Q", format=".2f")],
+        )
+        valores = base.mark_text().encode(
+            text=alt.Text("correlacao:Q", format=".2f"),
+            color=alt.condition("datum.correlacao > 0.5", alt.value("black"), alt.value("white")),
+        )
+
+        st.altair_chart((heatmap + valores).properties(height=380), width="stretch")
 
 # TODO: Dashboard 2 — KPIs (Aula 22)
