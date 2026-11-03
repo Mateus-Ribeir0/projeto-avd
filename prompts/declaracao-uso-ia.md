@@ -1,68 +1,170 @@
 # Declaração de Uso de IA
 
-**Nome:** Mateus Ribeiro
-**Data:** 29/10/2026 (Aulas 21 e 22)
+Atividade Streamlit AVD – 2026.2 – Dashboards com Streamlit (Aulas 21 a 23). A versão assinada fica em `prompts/DECLARACAO_IA.pdf`.
 
-## Ferramenta
+## 1. Identificação
 
-Claude Code (Anthropic), com as skills do Streamlit instaladas via `streamlit skills --yes`.
+| | |
+|---|---|
+| **Turma** | 5A |
+| **Nome completo** | Mateus de Almeida Ribeiro |
+| **E-mail** | mar2@cesar.school |
+| **Repositório** | https://github.com/Mateus-Ribeir0/projeto-avd |
+| **Data de entrega** | 03/11/2026 |
 
-## Divisão do trabalho
+## 2. Declaração geral
 
-- **Minha parte:** a ideia dos gráficos e da estrutura dos dois dashboards (o que entra em cada um e onde), a escolha das variáveis, métricas e widgets, o layout dos rascunhos, as análises e as explicações, incluindo a justificativa das métricas.
-- **Parte da IA:** escrever e organizar o código a partir do que defini, testar o app, gerar as imagens dos rascunhos em Matplotlib a partir do layout que descrevi e revisar a redação de alguns textos.
+Utilizei IA generativa e registrei todos os usos na Seção 4. A maior parte se enquadra nas situações permitidas. Os Usos nº 3, 8, 9, 10 e 11 têm partes que não se enquadram, e isso está indicado em cada bloco.
 
-## Aula 21 — Prompt usado
+Usei a Skill oficial do Streamlit (`streamlit skills`) a partir de 29/10/2026.
 
-1. **Rascunho → esqueleto do `app.py`**: template de [layout-skeleton-prompt.md](layout-skeleton-prompt.md), com a imagem do rascunho anexada ([../entregas/rascunho-dashboard1.png](../entregas/rascunho-dashboard1.png)):
+## 3. Ferramentas utilizadas
 
-```text
-Contexto: sou aluno da disciplina Análise e Visualização de Dados. Estou criando um dashboard
-em Streamlit para avaliar a correlação entre as variáveis quantitativas do Diabetes Dataset (UCI),
-agregado por paciente-dia.
+| Ferramenta | Versão / plano | Em que parte da atividade |
+|---|---|---|
+| Claude Code (extensão do VS Code) | Claude Pro – Opus 5.5 | notebooks/eda-com-downloads.ipynb |
+| Claude Code (extensão do VS Code) | Claude Pro – Opus 5.5 | app.py e src/data_loader.py |
+| Claude Code (extensão do VS Code) | Claude Pro – Opus 5.5 | Dashboard 1 |
+| Claude Code (extensão do VS Code) | Claude Pro – Opus 5.5 | Dashboard 2 |
+| Claude Code (extensão do VS Code) | Claude Pro – Opus 5.5 | rascunho-dashboard1.png e rascunho-dashboard2.png |
+| Claude Code (extensão do VS Code) | Claude Pro – Opus 5.5 | entregas/justificativa-metricas.md |
+| Claude Code (extensão do VS Code) | Claude Pro – Opus 5.5 | .streamlit/config.toml |
+| Claude Code (extensão do VS Code) | Claude Pro – Opus 5.5 | README.md |
+| Claude Code (extensão do VS Code) | Claude Pro – Opus 5.5 | Declaração de uso de IA |
+| Skill oficial do Streamlit | Instalada com `streamlit skills --yes` em 29/10/2026 | Código dos dashboards a partir de 29/10/2026 |
 
-Entrada: rascunho do layout em entregas/rascunho-dashboard1.png (anexo). Sidebar com seletor de variáveis
-quantitativas, sliders de intervalo e um toggle para distinguir por classe; área principal com o heatmap
-de correlação à esquerda e a distribuição (histogramas) à direita. Colunas: paciente, dia, glicemias
-(pré-café, pré-almoço, pré-jantar, pré-lanche), insulina_regular, insulina_nph e classe.
+## 4. Registro de usos (Opção B – bloco a bloco)
 
-Restrições: usar Streamlit; editar apenas o app.py; carregar os dados via src/data_loader.py;
-não implementar os gráficos ainda.
+| **Uso nº 1** | |
+|---|---|
+| **Data** | 22/10/2026 |
+| **Ferramenta** | Claude Code (Anthropic), extensão do VS Code, modelo Claude Opus 5.5. Sem a Skill do Streamlit (ainda não instalada). |
+| **Parte da atividade** | notebooks/eda-com-downloads.ipynb: célula de carregamento do dataset e células de exportação para data/raw e data/clean |
+| **Finalidade** | Entender mensagens de erro e depurar código. |
+| **O que foi pedido** | Adaptar a célula de carregamento, feita para o Google Colab, para ler o dataset local (diabetes-data.tar.Z); corrigir células com erro e com avisos do VS Code; converter as células "NOVA CÉLULA" do template, feitas para o Heart Disease, para salvar o dataset original e o tratado do Diabetes. |
+| **O que foi aproveitado e o que foi modificado** | Aproveitei o código de extração e leitura local, as correções de tipo (float(), # type: ignore) e as células de exportação. As análises e conclusões do EDA não foram alteradas. |
+| **Como verifiquei** | Rodei as células no VS Code e conferi que o dataset carregava e que data/clean/dataset.csv era gerado. |
 
-Formato de saída: esqueleto completo do app.py com os widgets funcionando e comentários # TODO
-nas partes dos gráficos.
-```
+| **Uso nº 2** | |
+|---|---|
+| **Data** | 22/10/2026 |
+| **Ferramenta** | Claude Code (Anthropic), extensão do VS Code, modelo Claude Opus 5.5. Sem a Skill do Streamlit (ainda não instalada). |
+| **Parte da atividade** | src/data_loader.py e app.py (esqueleto do Dashboard 1) |
+| **Finalidade** | Gerar o esqueleto do app.py. Não usei o Template de Prompt de 4 blocos: a IA adaptou o app.py do template da disciplina (feito para o Heart Disease) para o Diabetes Dataset, antes de o rascunho do Dashboard 1 existir. |
+| **O que foi pedido** | Ajustar o app.py para o meu dataset, logo depois da adaptação do notebook. |
+| **O que foi aproveitado e o que foi modificado** | Aproveitei: load_data() lendo data/clean/dataset.csv; montar_paciente_dia() com a tabela paciente-dia (média das glicemias por momento e soma das insulinas); a coluna classe (Hiperglicemia quando a média do dia passa de 180 mg/dL, o mesmo critério do meu EDA); a sidebar com seletor de variáveis, sliders de intervalo e toggle de classe. |
+| **Como verifiquei** | A IA testou o app com um CSV igual ao gerado pelo notebook. Depois rodei streamlit run app.py e conferi que os widgets aparecem e respondem. |
 
-2. **Organização do código**: pedidos para organizar o `app.py` e o `src/data_loader.py` (separar o carregamento e a montagem paciente-dia em funções, nomes de variáveis e comentários em português, filtros aplicados de forma consistente) e para organizar os arquivos do repositório nos caminhos pedidos pela atividade.
+| **Uso nº 3** | |
+|---|---|
+| **Data** | 22/10/2026 |
+| **Ferramenta** | Claude Code (Anthropic), extensão do VS Code, modelo Claude Opus 5.5. Sem a Skill do Streamlit (ainda não instalada). |
+| **Parte da atividade** | entregas/rascunho-dashboard1.png |
+| **Finalidade** | Nenhum item Permitido cobre exatamente a geração do rascunho; o mais próximo é "apoio na otimização da interface do dashboard". |
+| **O que foi pedido** | Criar um PNG de rascunho do Dashboard 1 a partir do rascunho da professora, com o layout que a IA achasse melhor para o meu dataset. Depois pedi uma versão simples, com os mesmos elementos do rascunho da professora, mudando só posição e tamanho. |
+| **O que foi aproveitado e o que foi modificado** | Rejeitei a primeira versão, em que a IA tinha acrescentado uma faixa de KPIs. Aproveitei a segunda, gerada em Matplotlib: sidebar igual, distribuição no meio e maior, correlação à direita e menor. As posições e os tamanhos foram escolhidos pela IA, e eu aprovei essa versão. |
+| **Como verifiquei** | Comparei a imagem com o rascunho da professora e com os requisitos do Dashboard 1. |
 
-## Aula 21 — O que foi aceito, modificado ou rejeitado e por quê
+| **Uso nº 4** | |
+|---|---|
+| **Data** | 29/10/2026 |
+| **Ferramenta** | Claude Code (Anthropic), extensão do VS Code, modelo Claude Opus 5.5. Nesta conversa a IA instalou a Skill oficial do Streamlit (streamlit skills --yes), usada daqui em diante. |
+| **Parte da atividade** | Repositório (Aula 21): sincronização com o repositório da professora, notebooks/, entregas/README.md e prompts/declaracao-uso-ia.md |
+| **Finalidade** | Usar a Skill oficial do Streamlit; dúvidas sobre Git (a IA executou os comandos). |
+| **O que foi pedido** | Atualizar meu repositório com o que a professora adicionou no repositório original; conferir e fazer os passos que faltavam da Aula 21; preencher a declaração de IA. |
+| **O que foi aproveitado e o que foi modificado** | A IA trouxe as mudanças do repositório original, renomeou os notebooks para os nomes pedidos, moveu o rascunho para entregas/, marcou o checklist, instalou a Skill, preencheu a declaração da Aula 21 e fez os commits e o push. |
+| **Como verifiquei** | Conferi os arquivos no VS Code e no GitHub. |
 
-- **Aceito:** o código do esqueleto, que seguiu o layout do meu rascunho (sidebar com filtros + duas colunas para correlação e distribuição), e a implementação dos widgets que pedi: o seletor de variáveis, um slider de intervalo por variável e o toggle de classe.
-- **Modificado:** o esqueleto foi adaptado do Heart Disease Dataset para o Diabetes Dataset: a lista de variáveis passou a vir do `data_loader` e o filtro de intervalo passou a manter os dias com medição ausente, já que cada paciente-dia tem só parte das medições.
-- **Rejeitado:** implementar os gráficos (heatmap e histogramas) nesta etapa, porque a atividade pede só o esqueleto com os widgets; eles ficaram como `# TODO`.
+| **Uso nº 5** | |
+|---|---|
+| **Data** | 29/10/2026 |
+| **Ferramenta** | Claude Code (Anthropic), extensão do VS Code, modelo Claude Opus 5.5, com a Skill oficial do Streamlit. |
+| **Parte da atividade** | app.py (Dashboard 1) e src/data_loader.py |
+| **Finalidade** | Apoio com a sintaxe de bibliotecas de visualização (Altair); entender mensagens de erro e depurar código. |
+| **O que foi pedido** | Fazer a segunda parte da atividade seguindo o roteiro da Aula 22, que colei na conversa. No Dashboard 1: gráficos com @st.cache_data, testes com 0, 1 e 2+ variáveis e seleção ligada entre os gráficos (guia ALTAIR-CROSSFILTER.md). |
+| **O que foi aproveitado e o que foi modificado** | Aproveitei o código como veio: histograma e heatmap de correlação em Altair (os tipos de gráfico vêm do enunciado), cache no carregamento, avisos para 0 e 1 variável e seleção no histograma recalculando a correlação. A correlação de Spearman é a mesma que usei no meu EDA; o mínimo de 10 paciente-dias por par (min_periods) foi definido pela IA. Os commits foram feitos pela IA. |
+| **Como verifiquei** | A IA testou os cenários de borda com streamlit.testing e rodou o app; abri o app no navegador e testei os widgets. |
 
-## Aula 22 — Prompts usados
+| **Uso nº 6** | |
+|---|---|
+| **Data** | 29/10/2026 |
+| **Ferramenta** | Claude Code (Anthropic), extensão do VS Code, modelo Claude Opus 5.5, com a Skill oficial do Streamlit. |
+| **Parte da atividade** | .streamlit/config.toml e cores dos gráficos no app.py |
+| **Finalidade** | Apoio na criação de identidade visual. |
+| **O que foi pedido** | Tema em preto com amarelo, moderado, seguindo o roteiro. |
+| **O que foi aproveitado e o que foi modificado** | A combinação preto e amarelo foi escolha minha. A IA definiu os códigos das cores (#0d0d0d, #f5c518 etc.) e as cores complementares dos gráficos (azul, laranja e cinza). Aproveitei como veio. |
+| **Como verifiquei** | Abri o app e conferi a leitura dos textos e dos gráficos no tema escuro. |
 
-Mesma ferramenta (Claude Code), numa conversa só, seguindo os passos do `ROTEIRO.md`. Resumo dos pedidos:
+| **Uso nº 7** | |
+|---|---|
+| **Data** | 29/10/2026 |
+| **Ferramenta** | Claude Code (Anthropic), extensão do VS Code, modelo Claude Opus 5.5, com a Skill oficial do Streamlit. |
+| **Parte da atividade** | app.py (abas e aba do Dashboard 2) e src/data_loader.py (montar_glicemias, montar_insulina_dia) |
+| **Finalidade** | Apoio com a sintaxe de bibliotecas de visualização (Altair); cálculo das métricas com apoio de IA. |
+| **O que foi pedido** | O mesmo pedido do Uso nº 5: separar os dashboards em abas e implementar widgets, st.metric e gráficos Altair com seleção ligada aos KPIs. |
+| **O que foi aproveitado e o que foi modificado** | Aproveitei o código como veio: filtros de paciente, período e momento; 5 st.metric com delta em relação à amostra; linha da glicemia mediana por semana com seleção por arraste; barras de faixas por momento do dia com seleção por clique; KPIs atualizados pelas seleções. |
+| **Como verifiquei** | A IA testou com streamlit.testing; abri o app e testei os filtros e as seleções. |
 
-1. Implementar os gráficos do Dashboard 1 em Altair seguindo o rascunho (histograma à esquerda, heatmap de correlação à direita), com `@st.cache_data` no carregamento dos dados.
-2. Testar o Dashboard 1 com 0, 1 e 2+ variáveis e com intervalos estreitos, e corrigir o que quebrasse.
-3. Ligar o histograma à correlação com seleção do Altair (guia `ALTAIR-CROSSFILTER.md`).
-4. Montar a identidade visual em preto e amarelo no `.streamlit/config.toml`.
-5. Implementar o Dashboard 2 a partir do que defini na ordem do roteiro (variáveis → métricas → widgets → rascunho): separar os dashboards em abas e implementar widgets, `st.metric` e gráficos Altair com seleção ligada aos KPIs.
-6. Organizar o código e os commits por etapa.
-7. Verificar se o app cumpre os requisitos da atividade (ver seção abaixo).
-8. Reorganizar o layout dos dois dashboards em cartões, na estrutura que defini, gerar as imagens dos rascunhos com esse novo layout, remover comentários do código e revisar a redação da justificativa das métricas para ficar mais direta.
+| **Uso nº 8** | |
+|---|---|
+| **Data** | 29/10/2026 |
+| **Ferramenta** | Claude Code (Anthropic), extensão do VS Code, modelo Claude Opus 5.5, com a Skill oficial do Streamlit. |
+| **Parte da atividade** | Dashboard 2: escolha das variáveis, das métricas, do público-alvo e dos widgets; entregas/rascunho-dashboard2.png; entregas/justificativa-metricas.md |
+| **Finalidade** | Não se enquadra em item Permitido. A Seção 2 lista como Proibido deixar a IA escolher, propor ou justificar as métricas e pedir que ela escreva a justificativa. |
+| **O que foi pedido** | O mesmo pedido do Uso nº 5. O roteiro da Aula 22 que colei incluía selecionar as variáveis, propor as métricas, definir os widgets, desenhar o rascunho e documentar a justificativa. |
+| **O que foi aproveitado e o que foi modificado** | A IA escolheu as variáveis (glicemia e insulina), o público-alvo, as 5 métricas (glicemia mediana, % na faixa-alvo, % de hiperglicemia, % de hipoglicemia e insulina por dia) e os widgets (paciente, período e momento da medição), gerou o rascunho em Matplotlib e escreveu a justificativa. Aproveitei como veio. |
+| **Como verifiquei** | Vi o Dashboard 2 rodando no navegador em 29/10. |
 
-## Aula 22 — O que foi aceito, modificado ou rejeitado e por quê
+| **Uso nº 9** | |
+|---|---|
+| **Data** | 29/10/2026 e 03/11/2026 |
+| **Ferramenta** | Claude Code (Anthropic), extensão do VS Code, modelo Claude Opus 5.5, com a Skill oficial do Streamlit. |
+| **Parte da atividade** | Projeto inteiro: app.py, entregas/ e a seção "Verificação dos requisitos" desta declaração |
+| **Finalidade** | Entender mensagens de erro e depurar código. O histograma por variável vem do enunciado; o terceiro visual do Dashboard 2 foi escolhido pela IA, e não só a sintaxe dele. |
+| **O que foi pedido** | Conferir se o projeto cumpre o enunciado da atividade (colei o texto) e os slides das Aulas 21, 22 e 23, e corrigir o que faltasse. Em 03/11, conferir de novo o enunciado e fazer o que estivesse faltando. |
+| **O que foi aproveitado e o que foi modificado** | A IA trocou o histograma único com seletor por um histograma por variável (Dashboard 1), acrescentou a distribuição das medições como terceiro visual do Dashboard 2 e atualizou o rascunho do Dashboard 2. Em 03/11 não houve mudança nos arquivos. |
+| **Como verifiquei** | A IA testou com streamlit.testing e no navegador. |
 
-- **Aceito:** o código dos gráficos em Altair nos dois dashboards, dos KPIs e da seleção por arraste (período) e por clique (momento do dia) atualizando os KPIs via `on_select`. As escolhas por trás desse código foram minhas: mediana (e não média) como medida central da glicemia, por causa da assimetria vista no EDA, e KPIs em proporção de medições por faixa (hipo < 70, alvo 70–180, hiper > 180), com o mesmo limite de 180 mg/dL usado na classe do Dashboard 1.
-- **Modificado:** o layout passou a ser em cartões, na estrutura que defini (resumo no topo, correlação e pares mais correlacionados lado a lado, histogramas em grade no Dashboard 1; filtros, KPIs e gráficos agrupados no Dashboard 2), e as imagens dos rascunhos foram geradas de novo para acompanhar; a correlação passou a exigir pelo menos 10 dias em comum por par (`min_periods`), porque cada paciente-dia tem só parte das medições e alguns pares ficavam com valores sem sentido; os KPIs ficam acima dos gráficos, como no rascunho, usando um `st.container` preenchido depois da seleção; rótulos do heatmap e formato das datas ajustados depois de ver o app rodando.
-- **Rejeitado:** usar `st.stop()` quando não há dados para a correlação, porque interromperia também o Dashboard 2 na outra aba; trocado por avisos em cada gráfico.
+| **Uso nº 10** | |
+|---|---|
+| **Data** | 29/10/2026 |
+| **Ferramenta** | Claude Code (Anthropic), extensão do VS Code, modelo Claude Opus 5.5, com a Skill oficial do Streamlit. |
+| **Parte da atividade** | app.py (layout dos dois dashboards), entregas/rascunho-dashboard1.png, entregas/rascunho-dashboard2.png, entregas/justificativa-metricas.md e comentários do código |
+| **Finalidade** | Apoio na otimização da interface do dashboard (layout). A revisão da justificativa não se enquadra em item Permitido, porque o texto revisado tinha sido escrito pela IA (Uso nº 8). |
+| **O que foi pedido** | Deixar a estrutura dos dois dashboards mais visual e organizada, ajustar os rascunhos se preciso, apagar todos os comentários do código e deixar a explicação das métricas mais geral e menos detalhada. |
+| **O que foi aproveitado e o que foi modificado** | A IA reorganizou os dois dashboards em cartões (resumo no topo, pares mais correlacionados ao lado do heatmap e histogramas em grade no Dashboard 1; filtros, KPIs e gráficos agrupados no Dashboard 2), acrescentou o gráfico de pares mais correlacionados, gerou de novo as imagens dos rascunhos, apagou os comentários e encurtou a justificativa. Aproveitei como veio. |
+| **Como verifiquei** | A IA testou o app depois das mudanças. |
 
-## Verificação dos requisitos do projeto
+| **Uso nº 11** | |
+|---|---|
+| **Data** | 29/10/2026 e 03/11/2026 |
+| **Ferramenta** | Claude Code (Anthropic), extensão do VS Code, modelo Claude Opus 5.5. |
+| **Parte da atividade** | prompts/declaracao-uso-ia.md e prompts/DECLARACAO_IA.pdf |
+| **Finalidade** | Revisar a clareza de textos. A declaração em Markdown foi redigida pela IA a partir do que foi feito, não só revisada. |
+| **O que foi pedido** | 29/10: preencher e atualizar a declaração de uso de IA. 03/11: conferir os trechos do projeto que falam de IA, rascunhar os blocos de registro a partir das conversas e do histórico do Git e ajustar esta declaração com base no PDF. |
+| **O que foi aproveitado e o que foi modificado** | Usei os blocos rascunhados pela IA como base do registro no PDF e preenchi as demais seções do PDF. |
+| **Como verifiquei** | Conferi os blocos com as conversas e com o histórico de commits. |
 
-Pedi à IA para conferir o projeto contra a atividade, o `ROTEIRO.md` e os slides das Aulas 21, 22 e 23 (hands-on, checagem do repositório e checklist final), testando o app com `streamlit.testing` e no navegador. A IA apontou os itens que não estavam cumpridos e implementou as correções a partir do que defini (quais gráficos entrariam e como); os demais foram só conferidos.
+## 5. Trechos de código feitos com apoio de IA
+
+| Arquivo / parte | Teve apoio de IA? | Tipo de apoio |
+|---|---|---|
+| app.py (esqueleto) | Sim | Geração do esqueleto, códigos base e testes (Usos nº 2 e 5) |
+| Dashboard 1 (correlação + distribuição) | Sim | Código dos gráficos em Altair (os tipos de gráfico vêm do enunciado), seleção ligada, layout em cartões e testes (Usos nº 5, 9 e 10) |
+| Dashboard 2 (KPIs) | Sim | Escolha das métricas, dos widgets e dos gráficos (Usos nº 8 e 9), implementação (Uso nº 7) e layout em cartões (Uso nº 10) |
+| Deploy / configuração | Sim | Tema em .streamlit/config.toml (Uso nº 6) |
+
+Os trechos estão marcados no código com `# [IA] Claude Code (Opus 5.5) – <finalidade>` em app.py, src/data_loader.py e .streamlit/config.toml.
+
+## 6. Reflexão individual
+
+A IA ajudou muito na geração de código, para concretizar de forma muito mais rápida as minhas ideias. A todo momento eu pensava em qual seria o melhor gráfico para ser utilizado ou qual o melhor contraste e as melhores práticas, mas não sabia bem como aplicar tecnicamente esses pontos nas ferramentas utilizadas, e usar IA me auxiliou muito no processo. Além disso, a IA me ajudou muito a garantir que todos os requisitos do projeto estavam sendo atendidos e a adaptar o meu dataset de acordo com o modelo apresentado pela professora, o que me poupou muito tempo.
+
+Uma sugestão da IA que rejeitei foi a faixa de KPIs no primeiro rascunho do Dashboard 1. Já as métricas do Dashboard 2 foram escolhidas pela IA quando pedi que ela fizesse a segunda parte do roteiro (Uso nº 8), e por isso esse item está declarado como fora das situações permitidas.
+
+## 7. Verificação dos requisitos do projeto
+
+Verificação feita com a IA (Uso nº 9), contra a atividade, o `ROTEIRO.md` e os slides das Aulas 21, 22 e 23, testando o app com `streamlit.testing` e no navegador.
 
 | Requisito (origem) | Situação |
 |---|---|

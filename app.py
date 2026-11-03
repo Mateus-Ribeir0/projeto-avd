@@ -14,6 +14,7 @@ from src.data_loader import (
     montar_paciente_dia,
 )
 
+# [IA] Claude Code (Opus 5.5) – esqueleto do app adaptado para o Diabetes Dataset
 st.set_page_config(
     page_title="Diabetes Dataset — Dashboards",
     layout="wide",
@@ -29,6 +30,7 @@ insulina_dia = montar_insulina_dia(eventos)
 VARS_QUANT = [c for c in COLS_GLICEMIA + COLS_INSULINA if df[c].notna().any()]
 MIN_DIAS = 10
 
+# [IA] Claude Code (Opus 5.5) – cores da identidade visual preto e amarelo
 AMARELO = "#f5c518"
 AZUL = "#6c8ebf"
 LARANJA = "#e8590c"
@@ -47,6 +49,7 @@ def titulo_cartao(texto):
     st.markdown(f"##### {texto}")
 
 
+# [IA] Claude Code (Opus 5.5) – esqueleto: sidebar com seletor de variáveis, sliders e toggle de classe
 with st.sidebar:
     st.header("Filtros do Dashboard 1")
 
@@ -79,6 +82,7 @@ df_filtrado = df
 for var, (inicio, fim) in intervalos.items():
     df_filtrado = df_filtrado[df_filtrado[var].isna() | df_filtrado[var].between(inicio, fim)]
 
+# [IA] Claude Code (Opus 5.5) – abas separando os dashboards
 aba_correlacao, aba_acompanhamento = st.tabs(
     ["Dashboard 1 — Correlação entre variáveis", "Dashboard 2 — Acompanhamento glicêmico"]
 )
@@ -86,6 +90,7 @@ aba_correlacao, aba_acompanhamento = st.tabs(
 with aba_correlacao:
     st.subheader("Avaliação de Correlação entre Variáveis Quantitativas")
 
+    # [IA] Claude Code (Opus 5.5) – layout em cartões e resumo do Dashboard 1
     r1, r2, r3 = st.columns(3)
     r1.metric("Paciente-dias no filtro", f"{len(df_filtrado)} de {len(df)}", border=True)
     r2.metric(
@@ -116,6 +121,7 @@ with aba_correlacao:
                             st.warning(f"Sem dados de {var} nos intervalos escolhidos.")
                             continue
 
+                        # [IA] Claude Code (Opus 5.5) – sintaxe Altair dos histogramas com seleção por arraste
                         faixa = alt.selection_interval(name="faixa", encodings=["x"])
                         histograma = (
                             alt.Chart(dados_hist, title=var)
@@ -153,6 +159,7 @@ with aba_correlacao:
         if len(variaveis) < 2:
             col_heatmap.warning("Selecione pelo menos 2 variáveis para calcular a correlação.")
         else:
+            # [IA] Claude Code (Opus 5.5) – correlação com mínimo de dias por par e heatmap em Altair
             corr = (
                 df_corr[variaveis]
                 .corr(method="spearman", min_periods=MIN_DIAS)
@@ -193,6 +200,7 @@ with aba_correlacao:
                 with col_pares.container(border=True):
                     titulo_cartao("Pares mais correlacionados")
 
+                    # [IA] Claude Code (Opus 5.5) – gráfico de pares mais correlacionados
                     ordem = {var: i for i, var in enumerate(variaveis)}
                     pares = corr[~sem_dados & (corr["var_y"].map(ordem) > corr["var_x"].map(ordem))].copy()
                     pares["par"] = pares["var_x"] + " × " + pares["var_y"]
@@ -215,6 +223,7 @@ with aba_correlacao:
 with aba_acompanhamento:
     st.subheader("Acompanhamento Glicêmico")
 
+    # [IA] Claude Code (Opus 5.5) – filtros do Dashboard 2
     with st.container(border=True):
         col_paciente, col_periodo, col_momento = st.columns(3)
 
@@ -253,6 +262,7 @@ with aba_acompanhamento:
     ]
     ins_filtrada = ins_paciente[ins_paciente["data"].between(*periodo)]
 
+    # [IA] Claude Code (Opus 5.5) – cálculo e exibição dos KPIs (st.metric)
     def resumo(glic, ins):
         return {
             "mediana": glic["valor"].median(),
@@ -317,6 +327,7 @@ with aba_acompanhamento:
         with col_semana.container(border=True):
             titulo_cartao("Glicemia mediana por semana")
 
+            # [IA] Claude Code (Opus 5.5) – sintaxe Altair da linha semanal com seleção por arraste
             por_semana = glic_filtrada.groupby("semana", as_index=False).agg(
                 mediana=("valor", "median"), medicoes=("valor", "size")
             )
@@ -359,6 +370,7 @@ with aba_acompanhamento:
         with col_faixas.container(border=True):
             titulo_cartao("Faixas por momento do dia")
 
+            # [IA] Claude Code (Opus 5.5) – sintaxe Altair das barras por momento com seleção por clique
             por_momento = (
                 glic_selecionada.groupby(["momento", "faixa"], as_index=False)
                 .size()
@@ -400,6 +412,7 @@ with aba_acompanhamento:
         with st.container(border=True):
             titulo_cartao("Distribuição das medições de glicemia")
 
+            # [IA] Claude Code (Opus 5.5) – sintaxe Altair da distribuição das medições
             distribuicao = (
                 alt.Chart(glic_selecionada[["valor", "faixa"]])
                 .mark_bar()

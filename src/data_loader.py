@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 
+# [IA] Claude Code (Opus 5.5) – carregamento dos dados e tabela paciente-dia (esqueleto adaptado ao Diabetes Dataset)
 COLS_GLICEMIA = [
     "glicemia_pre_cafe", "glicemia_pre_almoco", "glicemia_pre_jantar", "glicemia_pre_lanche",
 ]
@@ -38,6 +39,7 @@ def montar_paciente_dia(df):
     return largo.reset_index()
 
 
+# [IA] Claude Code (Opus 5.5) – preparação dos dados e faixas usadas nas métricas do Dashboard 2
 LIMITE_HIPO = 70
 LIMITE_HIPER = 180
 MOMENTOS = {
